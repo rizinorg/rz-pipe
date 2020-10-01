@@ -1,4 +1,4 @@
-module R2Pipe (R2Context(), open, cmd, cmdj) where
+module RzPipe (RzContext(), open, cmd, cmdj) where
 import Data.Char
 import Data.Word
 import Network.HTTP
@@ -25,23 +25,23 @@ lHTakeWhile p h = do
         then fmap (c `L.cons`) $ lHTakeWhile p h
         else return L.empty
 
-data R2Context = HttpCtx String
+data RzContext = HttpCtx String
                | PipeCtx Handle Handle
 
-open :: Maybe String -> IO R2Context
+open :: Maybe String -> IO RzContext
 open (Just url@('h':'t':'t':'p':_)) = return $ HttpCtx (url ++ "/cmd/")
 open (Just filename) = do
-    (hIn, hOut, _, _) <- createProcess' $ proc "radare2" ["-q0", filename]
-    lHTakeWhile (/= 0) hOut -- drop the inital null that r2 emits
+    (hIn, hOut, _, _) <- createProcess' $ proc "rizin" ["-q0", filename]
+    lHTakeWhile (/= 0) hOut -- drop the inital null that rizin emits
     return $ PipeCtx hIn hOut
 open Nothing = do
     hIn <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "R2PIPE_OUT"
     hOut <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "R2PIPE_IN"
     return $ PipeCtx hIn hOut
 
-cmd :: R2Context -> String -> IO L.ByteString
+cmd :: RzContext -> String -> IO L.ByteString
 cmd (HttpCtx url) cmd = fmap stringToLBS $ getResponseBody =<< simpleHTTP (getRequest (url ++ urlEncode cmd))
 cmd (PipeCtx hIn hOut) cmd = hPutStrLn hIn cmd >> hFlush hIn >> lHTakeWhile (/= 0) hOut
 
-cmdj :: JSON.FromJSON a => R2Context -> String -> IO (Maybe a)
+cmdj :: JSON.FromJSON a => RzContext -> String -> IO (Maybe a)
 cmdj = (fmap JSON.decode .) . cmd
