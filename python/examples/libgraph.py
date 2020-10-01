@@ -1,8 +1,8 @@
-import r2pipe
+import rzpipe
 import sys
 import os
 
-r2 = r2pipe.open("/bin/ls")
+r2 = rzpipe.open("/bin/ls")
 libpath = ["", ".", "/lib", "/usr/lib"]
 output = "aa"
 # output = 'dot'

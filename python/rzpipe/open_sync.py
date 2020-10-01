@@ -23,7 +23,7 @@ except ImportError:
 
 
 class open(OpenBase):
-    def __init__(self, filename="", flags=[], radare2home=None):
+    def __init__(self, filename="", flags=[], rizinhome=None):
         super(open, self).__init__(filename, flags)
         if filename.startswith("http://"):
             self._cmd = self._cmd_http
@@ -40,14 +40,14 @@ class open(OpenBase):
             self.conn.connect((r.group(1), int(r.group(2))))
         elif filename:
             self._cmd = self._cmd_process
-            if radare2home is not None:
-                if not os.path.isdir(radare2home):
+            if rizinhome is not None:
+                if not os.path.isdir(rizinhome):
                     raise Exception(
-                        "`radare2home` passed is invalid, leave it None or put a valid path to r2 folder"
+                        "`rizinhome` passed is invalid, leave it None or put a valid path to r2 folder"
                     )
-                r2e = os.path.join(radare2home, "radare2")
+                r2e = os.path.join(rizinhome, "rizin")
             else:
-                r2e = "radare2"
+                r2e = "rizin"
             if os.name == "nt":
                 # avoid errors on Windows when subprocess messes with name
                 r2e += ".exe"
@@ -58,7 +58,7 @@ class open(OpenBase):
                     cmd, shell=False, stdin=PIPE, stdout=PIPE, bufsize=0
                 )
             except:
-                raise Exception("ERROR: Cannot find radare2 in PATH")
+                raise Exception("ERROR: Cannot find rizin in PATH")
             self.process.stdout.read(1)  # Reads initial \x00
             # make it non-blocking to speedup reading
             self.nonblocking = True

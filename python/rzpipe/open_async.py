@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """open_async.py
-This script use code from r2pipe-async/open_p3.py script.
+This script use code from rzpipe-async/open_p3.py script.
 
 """
 import asyncio
@@ -34,10 +34,10 @@ class open(OpenBase, ContextDecorator):
         if not self._loop.is_closed():
             self._loop.close()
 
-    def __init__(self, filename="", flags=[], radare2home=None):
+    def __init__(self, filename="", flags=[], rizinhome=None):
         super(open, self).__init__(filename, flags)
 
-        self.r2home = radare2home
+        self.r2home = rizinhome
 
         if os.name == "nt":
             self._loop = asyncio.ProactorEventLoop()
@@ -106,9 +106,9 @@ class open(OpenBase, ContextDecorator):
             if self.r2home is not None:
                 if not os.path.isdir(self.r2home):
                     raise Exception(
-                        "`radare2home` passed to `open` is invalid, leave it None or put a valid path to r2 folder"
+                        "`rizinhome` passed to `open` is invalid, leave it None or put a valid path to r2 folder"
                     )
-                r2path = os.path.join(self.r2home, "radare2")
+                r2path = os.path.join(self.r2home, "rizin")
                 if os.name == "nt":
                     r2path += ".exe"
             else:
@@ -157,7 +157,7 @@ class open(OpenBase, ContextDecorator):
                 [
                     "GET /cmd/%s HTTP/1.1" % quocmd,
                     "Host: %s:%s" % (self._host, self._port),
-                    "User-Agent: r2pipe/Python Client",
+                    "User-Agent: rzpipe/Python Client",
                     "Accept: */*",
                     "",
                     "",

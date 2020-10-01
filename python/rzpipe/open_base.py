@@ -67,7 +67,7 @@ def get_radare_path():
 
         which = find_executable
 
-    bin_file = which("radare2")
+    bin_file = which("rizin")
 
     if bin_file and os.path.isfile(bin_file):
         return bin_file
@@ -75,18 +75,18 @@ def get_radare_path():
         _platform = platform.system().lower()
 
         if _platform.startswith("darwin"):
-            bin_file = "/usr/local/bin/radare2"
+            bin_file = "/usr/local/bin/rizin"
         else:
-            bin_file = "/usr/bin/radare2"
+            bin_file = "/usr/bin/rizin"
 
         if os.path.isfile(bin_file):
             return bin_file
         else:
-            raise IOError("radare2 can't be found in your system")
+            raise IOError("rizin can't be found in your system")
 
 
 class OpenBase(object):
-    """Class representing an r2pipe connection with a running radare2 instance
+    """Class representing an rzpipe connection with a running rizin instance
         Class body derived from __init__.py "open" class.
     
     
@@ -114,7 +114,7 @@ class OpenBase(object):
             return
         try:
             if os.name == "nt":
-                mypipename = os.environ["r2pipe_path"]
+                mypipename = os.environ["rzpipe_path"]
                 while 1:
                     hPipe = windll.kernel32.CreateFileW(
                         mypipename,
@@ -194,7 +194,7 @@ class OpenBase(object):
         return r2lang.cmd(cmd)
 
     def quit(self):
-        """Quit current r2pipe session and kill
+        """Quit current rzpipe session and kill
                 """
         self.cmd("q")
         if hasattr(self, "process"):
@@ -245,7 +245,7 @@ class OpenBase(object):
         try:
             data = json.loads(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("r2pipe.cmdj.Error: %s\n" % (e))
+            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
             data = None
         return data
 
@@ -260,7 +260,7 @@ class OpenBase(object):
         try:
             return jo2po(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("r2pipe.cmdj.Error: %s\n" % (e))
+            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
         return None
 
     def syscmd(self, cmd):
@@ -284,6 +284,6 @@ class OpenBase(object):
         try:
             data = json.loads(self.syscmd(cmd))
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("r2pipe.syscmdj.Error %s\n" % (e))
+            sys.stderr.write("rzpipe.syscmdj.Error %s\n" % (e))
             data = None
         return data

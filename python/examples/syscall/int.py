@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
-import r2pipe
+import rzpipe
 
-r2p = r2pipe.open()
+r2p = rzpipe.open()
 num = int(sys.argv[1])
 if num == 0x80:
     r = r2p.cmdj("arj")
