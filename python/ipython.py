@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 #
-# Author: pancake@nopcode.org // radare2 2015
+# Author: pancake@nopcode.org // rizin 2015
 #
 # $ r2 -qc '#!pipe python ipython.py' /bin/ls
 #
 
 import os
 import sys
-import r2pipe
+import rzpipe
 import IPython
 
 r2 = None
 try:
     pipes = [int(os.environ["R2PIPE_IN"]), int(os.environ["R2PIPE_OUT"])]
-    r2 = r2pipe.open("#!pipe")
+    r2 = rzpipe.open("#!pipe")
 except:
     print("This script must be run from inside r2:")
     print(" $ r2 -qi ipython.py /bin/ls")

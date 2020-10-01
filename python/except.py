@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import r2pipe
+import rzpipe
 import sys
 
-r = r2pipe.open("/bin/ls")
+r = rzpipe.open("/bin/ls")
 try:
     print("r2 version: %s" % r.cmd("?V"))
     pid = int(r.cmd("?vi $p"))

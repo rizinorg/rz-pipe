@@ -1,13 +1,13 @@
 import os
 import sys
-import r2pipe
+import rzpipe
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 
-r2 = r2pipe.open(curdir + "/ls", ["-2"])
+r2 = rzpipe.open(curdir + "/ls", ["-2"])
 
-# print(r2pipe.__file__)
-# print(r2pipe.VERSION)
+# print(rzpipe.__file__)
+# print(rzpipe.VERSION)
 
 r2.cmd("aa")
 

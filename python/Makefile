@@ -2,7 +2,7 @@ PWD=$(shell pwd)
 PYTHON?=`pwd`/python-wrapper
 PYTHON_VERSION?=`${PYTHON} --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
 PYTHON_PKGDIR=$(shell ${PYTHON} ../../mp.py)
-PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2pipe
+PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/rzpipe
 
 PYTHON2=python
 PYTHON3=python3
@@ -18,7 +18,7 @@ clean:
 	rm -rf dist
 
 symstall: uninstall
-	ln -fs $(PWD)/r2pipe "$(PYTHON_INSTALL_DIR)"
+	ln -fs $(PWD)/rzpipe "$(PYTHON_INSTALL_DIR)"
 
 twine:
 	sudo pip install twine

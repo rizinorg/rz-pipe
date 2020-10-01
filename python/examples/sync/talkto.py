@@ -5,7 +5,7 @@
 #
 # Requires:
 # - r2 from git
-# - r2pipe 0.9.0
+# - rzpipe 0.9.0
 # - r2pm -i lang-python
 # - Python 2 or 3
 #
@@ -15,10 +15,10 @@
 # - Run r2 -i talkto.py /bin/ls
 #
 
-import r2pipe
+import rzpipe
 
 try:
-    r2 = r2pipe.open()
+    r2 = rzpipe.open()
     r2.cmd("e cfg.user=pancake")
     r2.cmd("e cfg.log=true")
 
@@ -32,7 +32,7 @@ except:
 
 last = ""
 last2 = ""
-r2r = r2pipe.open("http://localhost:9090")
+r2r = rzpipe.open("http://localhost:9090")
 r2r.cmd("e cfg.log=true")
 print r2r.cmd("o")
 

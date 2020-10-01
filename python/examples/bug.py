@@ -1,5 +1,5 @@
 import sys
-import r2pipe
+import rzpipe
 
 err = 0
 
@@ -17,7 +17,7 @@ def test(msg, a, b):
 
 
 def verify(title, cmd, expected):
-    r2 = r2pipe.open("-")
+    r2 = rzpipe.open("-")
     msg = r2.cmd(cmd)
     test(title, msg, expected)
     r2.quit()
