@@ -12,7 +12,7 @@ import IPython
 
 r2 = None
 try:
-    pipes = [int(os.environ["R2PIPE_IN"]), int(os.environ["R2PIPE_OUT"])]
+    pipes = [int(os.environ["RZ_PIPE_IN"]), int(os.environ["RZ_PIPE_OUT"])]
     r2 = rzpipe.open("#!pipe")
 except:
     print("This script must be run from inside r2:")

@@ -7,8 +7,8 @@ showMainFunction ctx = do
 
 main = do
     -- Run rizin locally
-    open (Just "/bin/ls") >>= showMainFunction
+    --open (Just "/bin/ls") >>= showMainFunction
     -- Pick up pipes from parent rizin process
     open Nothing >>= showMainFunction
     -- Connect to rizin via HTTP (e.g. if "r2 -qc=h /bin/ls" is running)
-    open (Just "http://127.0.0.1:9090") >>= showMainFunction
+    --open (Just "http://127.0.0.1:9090") >>= showMainFunction

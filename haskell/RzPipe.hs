@@ -35,8 +35,8 @@ open (Just filename) = do
     lHTakeWhile (/= 0) hOut -- drop the inital null that rizin emits
     return $ PipeCtx hIn hOut
 open Nothing = do
-    hIn <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "R2PIPE_OUT"
-    hOut <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "R2PIPE_IN"
+    hIn <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "RZ_PIPE_OUT"
+    hOut <- fdToHandle =<< (read::(String -> FD)) <$> getEnv "RZ_PIPE_IN"
     return $ PipeCtx hIn hOut
 
 cmd :: RzContext -> String -> IO L.ByteString
