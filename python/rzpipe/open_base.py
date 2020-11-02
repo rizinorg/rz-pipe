@@ -114,7 +114,7 @@ class OpenBase(object):
             return
         try:
             if os.name == "nt":
-                mypipename = os.environ["rzpipe_path"]
+                mypipename = os.environ["RZ_PIPE_PATH"]
                 while 1:
                     hPipe = windll.kernel32.CreateFileW(
                         mypipename,
