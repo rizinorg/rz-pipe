@@ -10,15 +10,6 @@ You can install it using `opam` the OCaml package manager,
 see [here](http://hyegar.com/2015/10/20/so-youre-learning-ocaml/) for
 a quick introduction to the OCaml ecosystem and how to get opam.
 
-If not on opam or wanting to use the latest and greatest then do:
-
-TODO: correct git url
-```
-$ opam pin add rz-pipe git@github.com:fxfactorial/ocaml-rizin.git -y
-```
-
-Otherwise use the one on `opam`
-
 ```
 $ opam install rz-pipe -y
 ```
@@ -58,30 +49,29 @@ Rz.with_command ~cmd:"S=" "/bin/ls" |> print_endline;;
 Here is the `mli` with comments, fairly simple and high level.
 
 ```ocaml
+(** A running instance of rz *)
+type rz
 
-(** A running instance of r2 *)
-type r2
+(** Send a command to rz, get back plain string output *)
+val command : rz:rz -> string -> string
 
-(** Send a command to r2, get back plain string output *)
-val command : r2:r2 -> string -> string
-
-(** Send a command to r2, get back Yojson. If output isn't JSON
+(** Send a command to rz, get back Yojson. If output isn't JSON
     parsable then raises {Invalid_argument} so make sure command ends
     with 'j' *)
-val command_json : r2:r2 -> string -> Yojson.t
+val command_json : rz:rz -> string -> Yojson.t
 
-(** Create a r2 instance with a given file, raises {Invalid_argument}
+(** Create a rz instance with a given file, raises {Invalid_argument}
     if file doesn't exists *)
-val open_file : string -> r2
+val open_file : string -> rz
 
-(** close a r2 instance *)
-val close : r2 -> unit
+(** close a rz instance *)
+val close : rz -> unit
 
-(** Convenience function for opening a r2 instance, sending a command,
-    getting the result as plain string and closing the r2 instance *)
+(** Convenience function for opening a rz instance, sending a command,
+    getting the result as plain string and closing the rz instance *)
 val with_command : cmd:string -> string -> string
 
-(** Convenience function for opening a r2 instance, sending a command,
-    getting the result as Yojson and closing the r2 instance *)
+(** Convenience function for opening a rz instance, sending a command,
+    getting the result as Yojson and closing the rz instance *)
 val with_command_j : cmd:string -> string -> Yojson.t
 ```
