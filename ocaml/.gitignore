@@ -1,0 +1,19 @@
+# Vim temporary files
+*.sw[op]
+*.un~
+
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+
+# Merlin file
+.merlin
+
+# dune working directory
+_build/

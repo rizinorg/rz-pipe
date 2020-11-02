@@ -1,0 +1,6 @@
+(library
+  (name rz_pipe)
+   (public_name rz-pipe)
+   (wrapped false)
+   (libraries yojson unix)
+)
