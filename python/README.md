@@ -20,10 +20,10 @@ $ pip3 install rzpipe
 ```python
 import rzpipe
 
-r2 = rzpipe.open("/bin/ls")
-r2.cmd('aa')
-print(r2.cmd("afl"))
-print(r2.cmdj("aflj"))            # evaluates JSONs and returns an object
-print(r2.cmdj("ij").core.format)  # shows file format
-r2.quit()
+pipe = rzpipe.open("/bin/ls")
+pipe.cmd('aa')
+print(pipe.cmd("afl"))
+print(pipe.cmdj("aflj"))            # evaluates JSONs and returns an object
+print(pipe.cmdj("ij").core.format)  # shows file format
+pipe.quit()
 ```
