@@ -5,8 +5,8 @@ from os import system
 import time
 
 if __name__ == "__main__":
-    print("[+] Spawning r2 tcp and http servers")
-    system("pkill r2")
+    print("[+] Spawning rizin tcp and http servers")
+    system("pkill rizin")
     system("rizin -qc.:9080 /bin/ls &")
     system("rizin -qc=h /bin/ls &")
     time.sleep(1)
@@ -36,4 +36,4 @@ if __name__ == "__main__":
         print("Error with remote http conection")
     else:
         print(disas)
-    system("pkill -INT r2")
+    system("pkill -INT rizin")

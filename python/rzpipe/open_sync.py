@@ -43,15 +43,15 @@ class open(OpenBase):
             if rizinhome is not None:
                 if not os.path.isdir(rizinhome):
                     raise Exception(
-                        "`rizinhome` passed is invalid, leave it None or put a valid path to r2 folder"
+                        "`rizinhome` passed is invalid, leave it None or put a valid path to rizin folder"
                     )
-                r2e = os.path.join(rizinhome, "rizin")
+                rze = os.path.join(rizinhome, "rizin")
             else:
-                r2e = "rizin"
+                rze = "rizin"
             if os.name == "nt":
                 # avoid errors on Windows when subprocess messes with name
-                r2e += ".exe"
-            cmd = [r2e, "-q0", filename]
+                rze += ".exe"
+            cmd = [rze, "-q0", filename]
             cmd = cmd[:1] + flags + cmd[1:]
             try:
                 self.process = Popen(

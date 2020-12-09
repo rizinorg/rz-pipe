@@ -5,16 +5,16 @@ import sys
 
 r = rzpipe.open("/bin/ls")
 try:
-    print("r2 version: %s" % r.cmd("?V"))
+    print("rizin version: %s" % r.cmd("?V"))
     pid = int(r.cmd("?vi $p"))
-    print("Killing r2 PID %d" % (pid))
+    print("Killing rizin PID %d" % (pid))
     r.cmd('"!(sleep 1; kill -9 %d) &"' % pid)
     r.cmd("!sleep 3")
     print(r.cmd("x"))
     r.cmd("q")
     print("This was not expected!")
 except:
-    print("r2 was killed as expected")
+    print("rizin was killed as expected")
     sys.exit(0)
 
 sys.exit(1)

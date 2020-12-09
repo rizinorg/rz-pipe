@@ -1,1 +1,1 @@
-r2 -qi int.r2 -
+rizin -qi int.rz -

@@ -2,16 +2,16 @@
 import sys
 import rzpipe
 
-r2p = rzpipe.open()
+rzp = rzpipe.open()
 num = int(sys.argv[1])
 if num == 0x80:
-    r = r2p.cmdj("arj")
+    r = rzp.cmdj("arj")
     if r["eax"] == 1:
-        print "[SYSCALL EXIT] %d" % (r["ebx"])
+        print("[SYSCALL EXIT] {0:d}", r["ebx"])
     elif r["eax"] == 4:
-        msg = r2p.cmd("psz %d@%d" % (r["edx"], r["ecx"]))
-        print "[WRITE SYSCALL] ==> %s" % (msg)
+        msg = rzp.cmd("psz %d@%d" % (r["edx"], r["ecx"]))
+        print("[WRITE SYSCALL] ==> {0:s}", msg)
 elif num == 3:
-    print "[INT3]"
+    print("[INT3]")
 else:
-    print ("[unhandled SYSCALL %d]" % num)
+    print("[unhandled SYSCALL {0:d}]", num)

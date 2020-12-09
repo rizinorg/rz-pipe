@@ -1,2 +1,2 @@
-r2-pipe python api
+rz-pipe python api
 ==================

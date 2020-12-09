@@ -18,8 +18,8 @@ if len(sys.argv) > 1:
             print "Missing file to parse"
             sys.exit(1)
 else:
-    print "Usage: 010-to-r2.py [template.bt] ([file])"
-    print "> .!python 010-to-r2.py JPEGTemplate.bt"
+    print "Usage: 010-to-rizin.py [template.bt] ([file])"
+    print "> .!python 010-to-rizin.py JPEGTemplate.bt"
     sys.exit(1)
 
 # XXX pfp.parse show noisy messages

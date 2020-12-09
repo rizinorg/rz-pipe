@@ -8,20 +8,20 @@ commandline interface from Python using a pipe.
 
 The pipe can be connected to the parent process to run
 Python scripts from the rizin shell itself, or it can
-spawn a new process, connect via HTTP to a remote r2 http
+spawn a new process, connect via HTTP to a remote rizin http
 server, etc.
 
-Some r2 commands display the information in JSON, that's
+Some rizin commands display the information in JSON, that's
 why rzpipe provides `-j` methods to directly parse it
 and return a native Python object.
 
 Example:
   $ python
   > import rzpipe
-  > r = rzpipe.open("/bin/ls")
-  > print(r.cmd("pd 10"))
-  > print(r.cmdj("aoj")[0]['size'])
-  > r.quit()
+  > rz = rzpipe.open("/bin/ls")
+  > print(rz.cmd("pd 10"))
+  > print(rz.cmdj("aoj")[0]['size'])
+  > rz.quit()
 """
 
 import os
@@ -29,9 +29,9 @@ import sys
 import time
 
 try:
-    import r2lang
+    import rzlang
 except ImportError:
-    r2lang = None
+    rzlang = None
 
 VERSION = "1.4.2"
 
@@ -49,8 +49,8 @@ def version():
 # Hello World
 if __name__ == "__main__":
 
-    print("[+] Spawning r2 tcp and http servers")
-    os.system("pkill r2")
+    print("[+] Spawning rizin tcp and http servers")
+    os.system("pkill rizin")
     os.system("rizin -qc.:9080 /bin/ls &")
     os.system("rizin -qc=h /bin/ls &")
     time.sleep(1)

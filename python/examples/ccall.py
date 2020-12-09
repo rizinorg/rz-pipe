@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 import rzpipe
 
-r2 = rzpipe.open("ccall:///bin/ls")
-# r2 = rzpipe.open("/bin/ls")
-# r2.cmd("o /bin/ls")
-print r2.cmd("pd 10")
-r2.quit()
+rz = rzpipe.open("ccall:///bin/ls")
+# rz = rzpipe.open("/bin/ls")
+# rz.cmd("o /bin/ls")
+print(rz.cmd("pd 10"))
+rz.quit()

@@ -14,7 +14,7 @@ from collections.abc import Iterable
 from contextlib import ContextDecorator
 from urllib.parse import quote, urlparse
 
-from .open_base import OpenBase, get_radare_path
+from .open_base import OpenBase, get_rizin_path
 
 
 class open(OpenBase, ContextDecorator):
@@ -37,7 +37,7 @@ class open(OpenBase, ContextDecorator):
     def __init__(self, filename="", flags=[], rizinhome=None):
         super(open, self).__init__(filename, flags)
 
-        self.r2home = rizinhome
+        self.rzhome = rizinhome
 
         if os.name == "nt":
             self._loop = asyncio.ProactorEventLoop()
@@ -103,19 +103,19 @@ class open(OpenBase, ContextDecorator):
     @asyncio.coroutine
     def _cmd_process(self, cmd, future, callback):
         if not hasattr(self, "process"):
-            if self.r2home is not None:
-                if not os.path.isdir(self.r2home):
+            if self.rzhome is not None:
+                if not os.path.isdir(self.rzhome):
                     raise Exception(
-                        "`rizinhome` passed to `open` is invalid, leave it None or put a valid path to r2 folder"
+                        "`rizinhome` passed to `open` is invalid, leave it None or put a valid path to rizin folder"
                     )
-                r2path = os.path.join(self.r2home, "rizin")
+                rzpath = os.path.join(self.rzhome, "rizin")
                 if os.name == "nt":
-                    r2path += ".exe"
+                    rzpath += ".exe"
             else:
-                r2path = get_radare_path()
+                rzpath = get_rizin_path()
 
             create = asyncio.create_subprocess_exec(
-                r2path,
+                rzpath,
                 *self._process_start_cmd,
                 shell=False,
                 stdin=asyncio.subprocess.PIPE,

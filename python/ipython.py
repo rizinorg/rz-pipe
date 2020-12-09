@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #
-# Author: pancake@nopcode.org // rizin 2015
+# Author: pancake@nopcode.org
 #
-# $ r2 -qc '#!pipe python ipython.py' /bin/ls
+# $ rizin -qc '#!pipe python ipython.py' /bin/ls
 #
 
 import os
@@ -10,61 +10,61 @@ import sys
 import rzpipe
 import IPython
 
-r2 = None
+rz = None
 try:
     pipes = [int(os.environ["RZ_PIPE_IN"]), int(os.environ["RZ_PIPE_OUT"])]
-    r2 = rzpipe.open("#!pipe")
+    rz = rzpipe.open("#!pipe")
 except:
-    print("This script must be run from inside r2:")
-    print(" $ r2 -qi ipython.py /bin/ls")
+    print("This script must be run from inside rizin:")
+    print(" $ rizin -qi ipython.py /bin/ls")
     sys.exit(1)
 
 
-class RadareBin:
-    r2 = None
+class RizinBin:
+    rz = None
 
-    def __init__(self, r2):
-        self.r2 = r2
+    def __init__(self, rz):
+        self.rz = rz
         self.baddr = 0
-        self.filename = r2.cmd("i~file:0[1]").strip()
+        self.filename = rz.cmd("i~file:0[1]").strip()
 
     def imports(self):
         if self.baddr != 0:
-            return self.r2.syscmdj(
-                "rabin2 -B %d -ij '%s'" % (self.baddr, self.filename)
+            return self.rz.syscmdj(
+                "rz-bin -B %d -ij '%s'" % (self.baddr, self.filename)
             )["imports"]
         else:
-            return self.r2.syscmdj("rabin2 -ij '%s'" % (self.filename))["imports"]
+            return self.rz.syscmdj("rz-bin -ij '%s'" % (self.filename))["imports"]
 
     def symbols(self):
         if self.baddr != 0:
-            return self.r2.syscmdj(
-                "rabin2 -B %d -sj '%s'" % (self.baddr, self.filename)
+            return self.rz.syscmdj(
+                "rz-bin -B %d -sj '%s'" % (self.baddr, self.filename)
             )["symbols"]
         else:
-            return self.r2.syscmdj("rabin2 -sj '%s'" % (self.filename))["symbols"]
+            return self.rz.syscmdj("rz-bin -sj '%s'" % (self.filename))["symbols"]
 
     def entries(self):
         if self.baddr != 0:
-            return self.r2.syscmdj(
-                "rabin2 -B %d -ej '%s'" % (self.baddr, self.filename)
+            return self.rz.syscmdj(
+                "rz-bin -B %d -ej '%s'" % (self.baddr, self.filename)
             )["entries"]
         else:
-            return self.r2.syscmdj("rabin2 -ej '%s'" % (self.filename))["entries"]
+            return self.rz.syscmdj("rz-bin -ej '%s'" % (self.filename))["entries"]
 
 
-class Radare:
-    r2 = None
+class Rizin:
+    rz = None
     Bin = None
 
-    def __init__(self, r2):
-        self.r2 = r2
-        self.Bin = RadareBin(r2)
+    def __init__(self, rz):
+        self.rz = rz
+        self.Bin = RizinBin(rz)
 
     def seek(self, address):
         if type(address) == int:
             address = str(address)
-        self.r2.cmd("s %s" % (address))
+        self.rz.cmd("s %s" % (address))
         return self
 
     def disasm(self, *arg):  # address, count):
@@ -76,17 +76,17 @@ class Radare:
                 address = str(address)
             if len(arg) > 1:
                 count = arg[1]
-        print(self.r2.cmd("e scr.color=true;pd %d @ %s" % (count, address)))
+        print(self.rz.cmd("e scr.color=true;pd %d @ %s" % (count, address)))
         return self
 
     def hexdump(self, address, count):
         if type(address) == int:
             address = str(address)
-        print(self.r2.cmd("e scr.color=true;px %d @ %s" % (count, address)))
+        print(self.rz.cmd("e scr.color=true;px %d @ %s" % (count, address)))
         return self
 
 
-r = Radare(r2)
+r = Rizin(rz)
 r.disasm("entry0", 10)
 r.hexdump("entry0", 10)
 

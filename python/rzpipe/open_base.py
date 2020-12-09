@@ -15,9 +15,9 @@ import platform
 from subprocess import Popen, PIPE
 
 try:
-    import r2lang
+    import rzlang
 except ImportError:
-    r2lang = None
+    rzlang = None
 try:
     from .native import RCore
 
@@ -42,8 +42,8 @@ if os.name == "nt":
     cbWritten = c_ulong(0)
 
 
-def in_rlang():
-    return r2lang is not None and r2lang.cmd is not None
+def in_rzlang():
+    return rzlang is not None and rzlang.cmd is not None
 
 
 def jo2po(jo):
@@ -58,7 +58,7 @@ def jo2po(jo):
     return json2obj(jo)
 
 
-def get_radare_path():
+def get_rizin_path():
     try:
         which = shutil.which
     except AttributeError:
@@ -88,29 +88,29 @@ def get_radare_path():
 class OpenBase(object):
     """Class representing an rzpipe connection with a running rizin instance
         Class body derived from __init__.py "open" class.
-    
-    
+
+
         """
 
     def __init__(self, filename="", flags=[]):
-        """Open a new r2 pipe
+        """Open a new rizin pipe
                 The 'filename' can be one of the following:
 
                 * absolute or relative path to file
-                * http://<host>:<port> to connect to an r2 webserver
-                * tcp://<host>:<port> to connect to an r2 tcp server
-                * #!pipe when launching it from r2 via RLang.pipe
+                * http://<host>:<port> to connect to an rizin webserver
+                * tcp://<host>:<port> to connect to an rizin tcp server
+                * #!pipe when launching it from rizin via RzLang.pipe
 
                 Args:
                     filename (str): path to filename or uri
                     flags (list of str): arguments, either in comapct form
                         ("-wdn") or sepparated by commas ("-w","-d","-n")
                 Returns:
-                    Returns an object with methods to interact with r2 via commands
+                    Returns an object with methods to interact with rizin via commands
                 """
         self.asyn = False
-        if not filename and in_rlang():
-            self._cmd = self._cmd_rlang
+        if not filename and in_rzlang():
+            self._cmd = self._cmd_rzlang
             return
         try:
             if os.name == "nt":
@@ -148,7 +148,7 @@ class OpenBase(object):
         except:
             pass
         if filename.startswith("#!pipe"):
-            raise Exception("ERROR: Cannot use #!pipe without R2PIPE_{IN|OUT} env")
+            raise Exception("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
 
     def _cmd_pipe(self, cmd):
         out = b""
@@ -190,8 +190,8 @@ class OpenBase(object):
             self.native.cmd_str("o " + self.uri)
         return self.native.cmd_str(cmd)
 
-    def _cmd_rlang(self, cmd):
-        return r2lang.cmd(cmd)
+    def _cmd_rzlang(self, cmd):
+        return rzlang.cmd(cmd)
 
     def quit(self):
         """Quit current rzpipe session and kill
@@ -214,14 +214,14 @@ class OpenBase(object):
 
                 asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.1))
 
-    # r2 commands
+    # rizin commands
     def cmd(self, cmd, **kwargs):
-        """Run an r2 command return string with result
+        """Run an rizin command return string with result
                 Args:
-                    cmd (str): r2 command
+                    cmd (str): rizin command
                 Returns:
                     Returns an string with the results of the command
-                
+
                 res = self._cmd(cmd)
                 if res is not None:
                     return res.strip()
@@ -236,7 +236,7 @@ class OpenBase(object):
     def cmdj(self, cmd, **kwargs):
         """Same as cmd() but evaluates JSONs and returns an object
                 Args:
-                    cmdj (str): r2 command
+                    cmdj (str): rizin command
                 Returns:
                     Returns a JSON object respresenting the parsed JSON
                 """
@@ -252,7 +252,7 @@ class OpenBase(object):
     def cmdJ(self, cmd, **kwargs):
         """Same as cmdj() but evaluates into a native Python Object
                 Args:
-                    cmdJ (str): r2 command
+                    cmdJ (str): rizin command
                 Returns:
                     Returns a Python object respresenting the parsed JSON
                 """

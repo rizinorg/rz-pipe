@@ -17,10 +17,10 @@ def test(msg, a, b):
 
 
 def verify(title, cmd, expected):
-    r2 = rzpipe.open("-")
-    msg = r2.cmd(cmd)
+    rz = rzpipe.open("-")
+    msg = rz.cmd(cmd)
     test(title, msg, expected)
-    r2.quit()
+    rz.quit()
 
 
 verify("Test #1", "?e hello", "hello")

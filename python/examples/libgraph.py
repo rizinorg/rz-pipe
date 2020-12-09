@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 import rzpipe
 import sys
 import os
 
-r2 = rzpipe.open("/bin/ls")
+rz = rzpipe.open("/bin/ls")
 libpath = ["", ".", "/lib", "/usr/lib"]
 output = "aa"
 # output = 'dot'
@@ -20,7 +21,7 @@ def findlib(lib):
 
 
 def getlibs(lib):
-    return r2.syscmdj("rabin2 -lj %s" % (lib))["libs"]
+    return rz.syscmdj("rabin2 -lj %s" % (lib))["libs"]
 
 
 def filter(s):
@@ -28,11 +29,11 @@ def filter(s):
 
 
 def makeNode(name):
-    r2.cmd("agn %s" % (filter(name)))
+    rz.cmd("agn %s" % (filter(name)))
 
 
 def makeEdge(f, t):
-    r2.cmd("age %s %s" % (filter(f), filter(t)))
+    rz.cmd("age %s %s" % (filter(f), filter(t)))
 
 
 def graphlibs(src, root):
@@ -57,10 +58,10 @@ if len(sys.argv) > 1:
     path = sys.argv[1]
     graphlibs(path, None)
     if output == "dot":
-        print r2.cmd("aggd")
+        print(rz.cmd("aggd"))
     else:
-        print r2.cmd("e scr.color=true;agg")
-    r2.quit()
+        print(rz.cmd("e scr.color=true;agg"))
+    rz.quit()
 else:
-    print "Usage: libgraph.py [path-to-bin]"
+    print("Usage: libgraph.py [path-to-bin]")
     sys.exit(1)
