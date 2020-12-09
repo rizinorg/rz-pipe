@@ -1,8 +1,8 @@
 rz-pipe
 ======
 
-The rz-pipe APIs are based on a single r2 primitive found behind `rz_core_cmd_str()`
-which is a function that accepts a string parameter describing the r2 command to
+The rz-pipe APIs are based on a single rizin primitive found behind `rz_core_cmd_str()`
+which is a function that accepts a string parameter describing the rizin command to
 run and returns a string with the result.
 
 The decision behind this design comes from a series of benchmarks with different
@@ -19,13 +19,15 @@ to care about freeing the resulting string.
 This directory contains different implementations of the rz-pipe API for different
 languages which could handle different communication backends:
 
-  * Grab R2PIPE{_IN|_OUT} environment variables
-  * Spawn r2 -q0 and communicate with pipe(2)
+  * Grab RZPIPE{_IN|_OUT} environment variables
+  * Spawn `rizin -q0` and communicate with pipe(2)
   * Plain TCP connection
   * HTTP queries (connecting to a remote webserver)
-  * RAP protocol (r2 own's remote protocol)
+  * RAP protocol (rizin own's remote protocol)
 
 The current supported languages are:
 
   * Python
+  * Go
   * Haskell
+  * OCaml
