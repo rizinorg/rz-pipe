@@ -15,9 +15,9 @@ try:
 except:
     pass
 
-lib_name = find_library("r_core")
+lib_name = find_library("rz_core")
 if lib_name == None:
-    raise ImportError("No native r_core library")
+    raise ImportError("No native rz_core library")
 
 if sys.platform.startswith("win"):
     lib = WinDLL(lib_name)
@@ -102,16 +102,16 @@ def register(cname, args, ret):
 class RCore(Structure):  # 1
     def __init__(self):
         Structure.__init__(self)
-        r_core_new = lib.r_core_new
-        r_core_new.restype = c_void_p
-        self._o = r_core_new()
+        rz_core_new = lib.rz_core_new
+        rz_core_new.restype = c_void_p
+        self._o = rz_core_new()
 
     _o = AddressHolder()
 
-    cmd_str, r_core_cmd_str = register(
-        "r_core_cmd_str", "c_void_p, c_char_p", "c_char_p"
+    cmd_str, rz_core_cmd_str = register(
+        "rz_core_cmd_str", "c_void_p, c_char_p", "c_char_p"
     )
-    free, r_core_free = register("r_core_free", "c_void_p", "c_void_p")
+    free, rz_core_free = register("rz_core_free", "c_void_p", "c_void_p")
 
 
 #  c = RCore()
