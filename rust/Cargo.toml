@@ -9,9 +9,10 @@ edition = "2018"
 description = "Library to interact with rizin using rzpipe."
 
 # Repository
-repository = "https://github.com/rz-pipe/"
+repository = "https://github.com/rizinorg/rz-pipe/"
 
-keywords = ["rizin", "security", "exploitation", "program-analysis"]
+keywords = ["rizin", "security", "exploitation", "program-analysis",
+"reverse-engineering"]
 
 # Readme link
 readme = "README.md"
@@ -23,8 +24,8 @@ license = "MIT OR Apache-2.0"
 default = []
 
 [dependencies]
-libc = "0.2.71"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
+libc = "0.2.81"
+serde = "1.0.118"
+serde_json = "1.0.60"
+serde_derive = "1.0.118"
 reqwest = "0.9"

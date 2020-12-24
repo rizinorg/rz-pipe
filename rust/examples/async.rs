@@ -46,7 +46,7 @@ impl RzPipeAsync {
                 Some(_) => RzPipe::open(),
                 None => RzPipe::spawn(FILENAME.to_owned(), None),
             }
-            .unwrap();
+            .unwrap_or();
             loop {
                 let msg = child_rx.recv().unwrap();
                 if msg == "q" {
