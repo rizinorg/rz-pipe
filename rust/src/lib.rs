@@ -10,7 +10,7 @@
 //!
 //! `RzPipe`s are available for a several of languages. For more information
 //! about rzpipes in general head over to the
-//! [wiki](https://github.com/rizinorg/rizin-pipe/).
+//! [wiki](https://github.com/rizinorg/rz-pipe/).
 //!
 //! # Design
 //! All the functionality for the crate are exposed through two structs:

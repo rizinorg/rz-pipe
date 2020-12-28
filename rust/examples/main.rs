@@ -15,7 +15,7 @@ fn test_trim() {
 fn main() {
     test_trim();
 
-    // let mut r2p = open_pipe!().unwrap();
+    // let mut rzp = open_pipe!().unwrap();
     let opts = RzPipeSpawnOptions {
         exepath: "rizin".to_owned(),
         ..Default::default()

@@ -10,7 +10,7 @@ use std::sync::Arc;
         println!("Pipe #{} says: {}", id, result);
     });
 
-    // First two arguments for R2Pipe::threads() are the same as for R2Pipe::spawn() but inside vectors
+    // First two arguments for RzPipe::threads() are the same as for RzPipe::spawn() but inside vectors
     // Third and last argument is an option to a callback function
     // The callback function takes two Arguments: Thread ID and rzpipe output
     let pipes = match RzPipe::threads(
