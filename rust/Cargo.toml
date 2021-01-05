@@ -1,0 +1,31 @@
+[package]
+name = "rzpipe"
+version = "0.1.0"
+authors = [
+  "pancake <pancake@nopcode.org>",
+  "sushant94 <sushant.dinesh94@gmail.com>"
+]
+edition = "2018"
+description = "Library to interact with rizin using rzpipe."
+
+# Repository
+repository = "https://github.com/rizinorg/rz-pipe/"
+
+keywords = ["rizin", "security", "exploitation", "program-analysis",
+"reverse-engineering"]
+
+# Readme link
+readme = "README.md"
+
+# License information
+license = "MIT OR Apache-2.0"
+
+[features]
+default = []
+
+[dependencies]
+libc = "0.2.81"
+serde = "1.0.118"
+serde_json = "1.0.60"
+serde_derive = "1.0.118"
+reqwest = "0.9"
