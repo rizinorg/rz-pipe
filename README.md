@@ -31,3 +31,4 @@ The current supported languages are:
   * Go
   * Haskell
   * OCaml
+  * Rust
