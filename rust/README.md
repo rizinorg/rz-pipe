@@ -1,8 +1,6 @@
 ## rzpipe.rs
 
 The Rust Crate to interact with rizin.
-Please check [Documentation](https://radare.github.io/r2pipe.rs) to get
-started.
 
 ## License
 
