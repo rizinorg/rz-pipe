@@ -1,5 +1,5 @@
 all:
 	go test
-	cd example ; go run example.go
+	#cd example ; go run example.go
 
 .PHONY: all sync
