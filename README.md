@@ -32,3 +32,4 @@ The current supported languages are:
   * Haskell
   * OCaml
   * Rust
+  * Ruby
