@@ -18,7 +18,7 @@ description:
     connecting to an existing one using pipes or HTTP.
 
 extra-source-files:
-    README.md
+    README.md CHANGELOG.md
 
 library
   exposed-modules:     RzPipe
