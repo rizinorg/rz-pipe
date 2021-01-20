@@ -2,7 +2,7 @@
 
 # author pancake@nopcode.org
 
-require './rzpipe'
+require '../rzpipe'
 
 begin
   rzp = RzPipe.new
