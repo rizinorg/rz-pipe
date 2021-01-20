@@ -1,9 +1,8 @@
 import RzPipe
-import qualified Data.ByteString.Lazy as L
 
 showMainFunction ctx = do
     cmd ctx "s main"
-    L.putStr =<< cmd ctx "pD `fl $$`"
+    putStrLn =<< cmd ctx "pD `fl $$`"
 
 main = do
     -- Spawn a new rizin instance and open the /bin/ls binary in it
