@@ -6,7 +6,7 @@ showMainFunction ctx = do
     L.putStr =<< cmd ctx "pD `fl $$`"
 
 main = do
-    -- Run rizin locally
+    -- Spawn a new rizin instance and open the /bin/ls binary in it
     open (Just "/bin/ls") >>= showMainFunction
     -- Pick up pipes from parent rizin process
     open Nothing >>= showMainFunction
