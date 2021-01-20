@@ -35,5 +35,5 @@ executable example
   main-is:             Example.hs
   build-depends:       base >=4.12 && <5,
                        rz-pipe,
-                       bytestring
+                       aeson
   default-language:    Haskell2010
