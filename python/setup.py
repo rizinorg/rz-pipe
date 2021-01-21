@@ -7,7 +7,7 @@ def readme():
         return readme_file.read()
 
 setup(
-    name="rzpipe",
+    name="rz-pipe",
     version=rzpipe.version(),
     description="Pipe interface for rizin",
     long_description=readme(),
