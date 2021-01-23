@@ -1,7 +1,0 @@
-PKGNAME radare2-r2pipe
-VERSION 4.3.0
-CONTACT pancake ; pancake@nopcode.org
-
-SUBDIRS ./Makefile ;
-
-REPORT PREFIX ;
