@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install python and other dependencies
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools ruby ocaml opam rustc cargo
+      run: sudo apt-get update && sudo apt-get --assume-yes install python3-wheel python3-setuptools ruby ocaml opam rustc cargo
     - name: Install meson and ninja
       run: pip3 install --user meson ninja PyYAML
     - name: Checkout rizin
