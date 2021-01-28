@@ -23,8 +23,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
         "Topic :: Security",
-        "Topic :: Software Development :: Assemblers"
-        "Topic :: Software Development :: Debuggers"
+        "Topic :: Software Development :: Assemblers",
+        "Topic :: Software Development :: Debuggers",
         "Topic :: Software Development :: Disassemblers"
     ],
 )
