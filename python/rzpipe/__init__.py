@@ -33,7 +33,7 @@ try:
 except ImportError:
     rzlang = None
 
-VERSION = "1.4.2"
+VERSION = "0.1.0"
 
 from .open_sync import open
 

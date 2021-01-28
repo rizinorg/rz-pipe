@@ -12,7 +12,7 @@ setup(
     description="Pipe interface for rizin",
     long_description=readme(),
     long_description_content_type='text/markdown',
-    author="pancake",
+    author="rizinorg",
     author_email="info@rizin.re",
     url="https://rizin.re",
     license="MIT",
