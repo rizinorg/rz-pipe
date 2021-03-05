@@ -2,23 +2,24 @@
 //!
 //! Please check crate level documentation for more details and examples.
 
-use reqwest;
-
-use libc;
+use std::borrow::Borrow;
 use std::env;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::BufReader;
+use std::io::prelude::*;
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::Path;
 use std::process;
 use std::process::Command;
 use std::process::Stdio;
 use std::str;
-use std::sync::mpsc;
 use std::sync::Arc;
+use std::sync::mpsc;
+use std::sync::mpsc::SendError;
 use std::thread;
 
+use libc;
+use reqwest;
 use serde_json;
 use serde_json::Value;
 
@@ -66,6 +67,7 @@ pub enum RzPipe {
     Lang(RzPipeLang),
     Tcp(RzPipeTcp),
     Http(RzPipeHttp),
+    None
 }
 
 fn atoi(k: &str) -> i32 {
@@ -143,6 +145,7 @@ impl RzPipe {
             RzPipe::Lang(ref mut x) => x.cmd(cmd.trim()),
             RzPipe::Tcp(ref mut x) => x.cmd(cmd.trim()),
             RzPipe::Http(ref mut x) => x.cmd(cmd.trim()),
+            RzPipe::None => Err("Called cmd on RzPipe::None. You probably want to use open for a proper pipe.".to_owned()),
         }
     }
 
@@ -152,6 +155,7 @@ impl RzPipe {
             RzPipe::Lang(ref mut x) => x.cmdj(cmd.trim()),
             RzPipe::Tcp(ref mut x) => x.cmdj(cmd.trim()),
             RzPipe::Http(ref mut x) => x.cmdj(cmd.trim()),
+            RzPipe::None => Err("Called cmdj on RzPipe::None. You probably want to use open for a proper pipe.".to_owned()),
         }
     }
 
@@ -161,6 +165,7 @@ impl RzPipe {
             RzPipe::Lang(ref mut x) => x.close(),
             RzPipe::Tcp(ref mut x) => x.close(),
             RzPipe::Http(ref mut x) => x.close(),
+            RzPipe::None => {eprintln!("Called close on RzPipe::None. You probably want to use open for a proper pipe.")},
         }
     }
 
@@ -213,7 +218,9 @@ impl RzPipe {
 
         // flush out the initial null byte.
         let mut w = [0; 1];
-        sout.read_exact(&mut w).unwrap();
+        if let Err(e) = sout.read_exact(&mut w){
+            return Err(coerce_to_static_str(e.to_string().to_owned()))
+        }
 
         let res = RzPipeSpawn {
             read: BufReader::new(sout),
@@ -263,13 +270,20 @@ impl RzPipe {
             let cb = callback.clone();
             let t = thread::spawn(move || {
                 let mut rz = RzPipe::spawn(name, opt).unwrap();
-                loop {
+                'outer: loop {
                     let cmd: String = hrx.recv().unwrap();
                     if cmd == "q" {
                         break;
                     }
                     let res = rz.cmdj(&cmd).unwrap().to_string();
-                    htx.send(res.clone()).unwrap();
+                    let result = htx.send(res.clone());
+                    match result{
+                        Err(e) =>{
+                            eprintln!("{}", e.to_string().to_owned());
+                            break 'outer;
+                        }
+                        Ok(_) => {}
+                    }
                     if let Some(cbs) = cb.clone() {
                         thread::spawn(move || {
                             cbs(n as u16, res);
@@ -332,8 +346,15 @@ impl RzPipeLang {
     pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
         self.write.write_all(cmd.as_bytes()).unwrap();
         let mut res: Vec<u8> = Vec::new();
-        self.read.read_until(0u8, &mut res).unwrap();
-        process_result(res)
+        let buffer = self.read.read_until(0u8, &mut res);
+        match buffer {
+            Ok(_) => {
+                process_result(res)
+            }
+            Err(_) => {
+                Err("Could not read until buffered reader until the end".to_owned())
+            }
+        }
     }
 
     pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
@@ -387,4 +408,8 @@ impl RzPipeTcp {
     }
 
     pub fn close(&mut self) {}
+}
+
+fn coerce_to_static_str(s: String) -> &'static str {
+    Box::leak(s.into_boxed_str())
 }

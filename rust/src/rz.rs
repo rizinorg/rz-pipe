@@ -7,9 +7,12 @@
 
 //! Few functions for initialization, communication and termination of rizin.
 
-use crate::rzpipe::RzPipe;
+use std::option::Option;
+
 use serde_json;
 use serde_json::Value;
+
+use crate::rzpipe::RzPipe;
 
 pub struct Rz {
     pipe: RzPipe,
@@ -18,7 +21,10 @@ pub struct Rz {
 
 impl Default for Rz {
     fn default() -> Rz {
-        Rz::new::<&str>(None).expect("Unable to spawn rizin or find an open rzpipe")
+        Rz::new::<&str>(None).unwrap_or(Rz {
+            pipe: RzPipe::None {},
+            readin: "".to_owned(),
+        })
     }
 }
 
@@ -33,12 +39,19 @@ impl Rz {
             return Err(e);
         }
 
-        // This means that path is `Some` or we have an open session.
-        let pipe = open_pipe!(path.as_ref()).unwrap();
-        Ok(Rz {
-            pipe,
-            readin: String::new(),
-        })
+        let pipe = open_pipe!(path.as_ref());
+        match pipe {
+            // This means that path is `Some` or we have an open session.
+            Ok(pipe) => {
+                Ok(Rz {
+                    pipe,
+                    readin: String::new(),
+                })
+            }
+            Err(_) => {
+                Err("Path could not be resolved or we do not have an open session!".to_owned())
+            }
+        }
     }
 
     pub fn in_session() -> bool {
