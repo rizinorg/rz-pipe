@@ -49,11 +49,22 @@
 //! process (multi-threadable), http or tcp.
 //! Check the examples/ dir for more complete examples.
 
-#[macro_use]
-pub mod rzpipe;
-pub mod rz;
-
+pub use self::errors::{
+    RzInitError,
+    RzPipeError,
+    RzPipeHttpError,
+    RzPipeLangError,
+    RzPipeSpawnError,
+    RzPipeThreadError,
+    RzPipeTcpError,
+};
 // Rexport to bring it out one module.
 pub use self::rz::Rz;
 pub use self::rzpipe::RzPipe;
 pub use self::rzpipe::RzPipeSpawnOptions;
+
+#[macro_use]
+pub mod rzpipe;
+pub mod rz;
+pub mod errors;
+
