@@ -2,7 +2,6 @@
 //!
 //! Please check crate level documentation for more details and examples.
 
-use std::borrow::Borrow;
 use std::env;
 use std::fs::File;
 use std::io::BufReader;
@@ -15,13 +14,14 @@ use std::process::Stdio;
 use std::str;
 use std::sync::Arc;
 use std::sync::mpsc;
-use std::sync::mpsc::SendError;
 use std::thread;
 
 use libc;
 use reqwest;
-use serde_json;
 use serde_json::Value;
+
+use crate::{RzPipeError, RzPipeHttpError, RzPipeSpawnError, RzPipeTcpError, RzPipeThreadError};
+use crate::errors::RzPipeLangError;
 
 /// File descriptors to the parent rizin process.
 pub struct RzPipeLang {
@@ -67,7 +67,7 @@ pub enum RzPipe {
     Lang(RzPipeLang),
     Tcp(RzPipeTcp),
     Http(RzPipeHttp),
-    None
+    None,
 }
 
 fn atoi(k: &str) -> i32 {
@@ -116,12 +116,12 @@ macro_rules! open_pipe {
 
 impl RzPipe {
     #[cfg(not(windows))]
-    pub fn open() -> Result<RzPipe, &'static str> {
+    pub fn open() -> Result<RzPipe, RzPipeError> {
         use std::os::unix::io::FromRawFd;
 
         let (f_in, f_out) = match RzPipe::in_session() {
             Some(x) => x,
-            None => return Err("Pipe not open. Please run from rizin"),
+            None => return Err(RzPipeError::NotOpen),
         };
         let res = unsafe {
             // dup file descriptors to avoid from_raw_fd ownership issue
@@ -139,23 +139,23 @@ impl RzPipe {
         Err("`open()` is not yet supported on windows")
     }
 
-    pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
+    pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeError> {
         match *self {
-            RzPipe::Pipe(ref mut x) => x.cmd(cmd.trim()),
-            RzPipe::Lang(ref mut x) => x.cmd(cmd.trim()),
-            RzPipe::Tcp(ref mut x) => x.cmd(cmd.trim()),
-            RzPipe::Http(ref mut x) => x.cmd(cmd.trim()),
-            RzPipe::None => Err("Called cmd on RzPipe::None. You probably want to use open for a proper pipe.".to_owned()),
+            RzPipe::Pipe(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Lang(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Tcp(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Http(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::None => Err(RzPipeError::CmdIsNoop)
         }
     }
 
-    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
+    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeError> {
         match *self {
-            RzPipe::Pipe(ref mut x) => x.cmdj(cmd.trim()),
-            RzPipe::Lang(ref mut x) => x.cmdj(cmd.trim()),
-            RzPipe::Tcp(ref mut x) => x.cmdj(cmd.trim()),
-            RzPipe::Http(ref mut x) => x.cmdj(cmd.trim()),
-            RzPipe::None => Err("Called cmdj on RzPipe::None. You probably want to use open for a proper pipe.".to_owned()),
+            RzPipe::Pipe(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Lang(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Tcp(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Http(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::None => Err(RzPipeError::CmdjIsNoop),
         }
     }
 
@@ -165,7 +165,7 @@ impl RzPipe {
             RzPipe::Lang(ref mut x) => x.close(),
             RzPipe::Tcp(ref mut x) => x.close(),
             RzPipe::Http(ref mut x) => x.close(),
-            RzPipe::None => {eprintln!("Called close on RzPipe::None. You probably want to use open for a proper pipe.")},
+            RzPipe::None => { eprintln!("{:?}", RzPipeError::CloseIsNoop) }
         }
     }
 
@@ -190,7 +190,7 @@ impl RzPipe {
     pub fn spawn<T: AsRef<str>>(
         name: T,
         opts: Option<RzPipeSpawnOptions>,
-    ) -> Result<RzPipe, &'static str> {
+    ) -> Result<RzPipe, RzPipeError> {
         if name.as_ref() == "" && RzPipe::in_session().is_some() {
             return RzPipe::open();
         }
@@ -218,9 +218,7 @@ impl RzPipe {
 
         // flush out the initial null byte.
         let mut w = [0; 1];
-        if let Err(e) = sout.read_exact(&mut w){
-            return Err(coerce_to_static_str(e.to_string().to_owned()))
-        }
+        sout.read_exact(&mut w).map_err(|e| RzPipeError::FlushInitialNullByte(e))?;
 
         let res = RzPipeSpawn {
             read: BufReader::new(sout),
@@ -231,17 +229,17 @@ impl RzPipe {
     }
 
     /// Creates a new RzPipeTcp
-    pub fn tcp<A: ToSocketAddrs>(addr: A) -> Result<RzPipe, &'static str> {
+    pub fn tcp<A: ToSocketAddrs>(addr: A) -> Result<RzPipe, RzPipeError> {
         // use `connect` to figure out which socket address works
         let stream = TcpStream::connect(addr).map_err(|_| "Unable to connect TCP stream")?;
         let addr = stream
             .peer_addr()
-            .map_err(|_| "Unable to get peer address")?;
+            .map_err(|_| RzPipeError::PeerAddressNotAvailable)?;
         Ok(RzPipe::Tcp(RzPipeTcp { socket_addr: addr }))
     }
 
     /// Creates a new RzPipeHttp
-    pub fn http(host: &str) -> Result<RzPipe, &'static str> {
+    pub fn http(host: &str) -> Result<RzPipe, RzPipeError> {
         Ok(RzPipe::Http(RzPipeHttp {
             host: host.to_string(),
         }))
@@ -255,9 +253,9 @@ impl RzPipe {
         names: Vec<&'static str>,
         opts: Vec<Option<RzPipeSpawnOptions>>,
         callback: Option<Arc<dyn Fn(u16, String) + Sync + Send>>,
-    ) -> Result<Vec<RzPipeThread>, &'static str> {
+    ) -> Result<Vec<RzPipeThread>, RzPipeError> {
         if names.len() != opts.len() {
-            return Err("Please provide 2 Vectors of the same size for names and options");
+            return Err(RzPipeError::ThreadVectorValue);
         }
 
         let mut pipes = Vec::new();
@@ -277,8 +275,8 @@ impl RzPipe {
                     }
                     let res = rz.cmdj(&cmd).unwrap().to_string();
                     let result = htx.send(res.clone());
-                    match result{
-                        Err(e) =>{
+                    match result {
+                        Err(e) => {
                             eprintln!("{}", e.to_string().to_owned());
                             break 'outer;
                         }
@@ -303,38 +301,39 @@ impl RzPipe {
 }
 
 impl RzPipeThread {
-    pub fn send(&self, cmd: String) -> Result<(), &'static str> {
-        self.rzsend.send(cmd).map_err(|_| "Channel send error")
+    pub fn send(&self, cmd: String) -> Result<(), RzPipeThreadError> {
+        self.rzsend.send(cmd).map_err(|e| RzPipeThreadError::ChannelSend(e.to_string().to_string()))
     }
 
-    pub fn recv(&self, block: bool) -> Result<String, &'static str> {
+    pub fn recv(&self, block: bool) -> Result<String, RzPipeThreadError> {
         if block {
-            return self.rzrecv.recv().map_err(|_| "Channel recv error");
+            return self.rzrecv.recv().map_err(|e| RzPipeThreadError::ChannelRecv(e.to_string().to_string()));
         }
-        self.rzrecv.try_recv().map_err(|_| "Channel try_recv error")
+        self.rzrecv.try_recv().map_err(|e| RzPipeThreadError::ChannelTryRecv(e.to_string().to_string()))
     }
 }
 
 impl RzPipeSpawn {
-    pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
+    pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeSpawnError> {
         let cmd = cmd.to_owned() + "\n";
         self.write
             .write_all(cmd.as_bytes())
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| RzPipeSpawnError::WriteCmd(e.to_string().to_owned()))?;
 
         let mut res: Vec<u8> = Vec::new();
         self.read
             .read_until(0u8, &mut res)
-            .map_err(|e| e.to_string())?;
-        process_result(res)
+            .map_err(|e| RzPipeSpawnError::ReadCmdResponse(e.to_string().to_owned()))?;
+
+        process_result(res).map_err(|e| RzPipeSpawnError::ProcessResult(e.to_string().to_owned()))
     }
 
-    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
+    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeSpawnError> {
         let result = self.cmd(cmd)?;
         if result == "" {
-            return Err("Empty JSON".to_string());
+            return Err(RzPipeSpawnError::EmptyJson);
         }
-        serde_json::from_str(&result).map_err(|e| e.to_string())
+        serde_json::from_str(&result).map_err(|e| RzPipeSpawnError::ParsingJson(e.to_string().to_owned()))
     }
 
     pub fn close(&mut self) {
@@ -343,73 +342,64 @@ impl RzPipeSpawn {
 }
 
 impl RzPipeLang {
-    pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
+    pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeLangError> {
         self.write.write_all(cmd.as_bytes()).unwrap();
         let mut res: Vec<u8> = Vec::new();
         let buffer = self.read.read_until(0u8, &mut res);
+
         match buffer {
             Ok(_) => {
-                process_result(res)
+                return process_result(res).map_err(|e| RzPipeLangError::ProcessResult(e));
             }
-            Err(_) => {
-                Err("Could not read until buffered reader until the end".to_owned())
-            }
+            Err(e) => Err(RzPipeLangError::BufferNotFullyReadable(e.to_string().to_owned()))
         }
     }
 
-    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
+    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeLangError> {
         let res = self.cmd(cmd)?;
-
-        serde_json::from_str(&res).map_err(|e| e.to_string())
+        serde_json::from_str(&res).map_err(|e| RzPipeLangError::ParsingJson(e.to_string()))
     }
 
-    pub fn close(&mut self) {
-        // self.read.close();
-        // self.write.close();
-    }
+    pub fn close(&mut self) {}
 }
 
 impl RzPipeHttp {
-    pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
+    pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeHttpError> {
         let url = format!("http://{}/cmd/{}", self.host, cmd);
         let res = reqwest::get(&url).unwrap();
         let bytes = res.bytes().filter_map(|e| e.ok()).collect::<Vec<_>>();
         str::from_utf8(bytes.as_slice())
             .map(|s| s.to_string())
-            .map_err(|err| err.to_string())
+            .map_err(|err| RzPipeHttpError::DecodeError(err.to_string()))
     }
 
-    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
+    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeHttpError> {
         let res = self.cmd(cmd)?;
-        serde_json::from_str(&res).map_err(|e| format!("Unable to parse json: {}", e))
+        serde_json::from_str(&res).map_err(|e| RzPipeHttpError::ParsingJson(e.to_string()))
     }
 
     pub fn close(&mut self) {}
 }
 
 impl RzPipeTcp {
-    pub fn cmd(&mut self, cmd: &str) -> Result<String, String> {
+    pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeTcpError> {
         let mut stream = TcpStream::connect(self.socket_addr)
-            .map_err(|e| format!("Unable to connect TCP stream: {}", e))?;
+            .map_err(|e| RzPipeTcpError::Connection(e.to_string()))?;
         stream
             .write_all(cmd.as_bytes())
-            .map_err(|e| format!("Unable to write to TCP stream: {}", e))?;
+            .map_err(|e| RzPipeTcpError::Write(e.to_string()))?;
         let mut res: Vec<u8> = Vec::new();
         stream
             .read_to_end(&mut res)
-            .map_err(|e| format!("Unable to read from TCP stream: {}", e))?;
+            .map_err(|e| RzPipeTcpError::Read(e.to_string()))?;
         res.push(0);
-        process_result(res)
+        process_result(res).map_err(|e| RzPipeTcpError::ProcessResult(e.to_string().to_owned()))
     }
 
-    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, String> {
+    pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeTcpError> {
         let res = self.cmd(cmd)?;
-        serde_json::from_str(&res).map_err(|e| format!("Unable to parse json: {}", e))
+        serde_json::from_str(&res).map_err(|e| RzPipeTcpError::ParsingJson(e.to_string()))
     }
 
     pub fn close(&mut self) {}
-}
-
-fn coerce_to_static_str(s: String) -> &'static str {
-    Box::leak(s.into_boxed_str())
 }
