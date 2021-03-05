@@ -2,8 +2,9 @@
 name = "rzpipe"
 version = "0.1.0"
 authors = [
-  "pancake <pancake@nopcode.org>",
-  "sushant94 <sushant.dinesh94@gmail.com>"
+    "pancake <pancake@nopcode.org>",
+    "sushant94 <sushant.dinesh94@gmail.com>",
+    "4thel00z <4thel00z@gmail.com>"
 ]
 edition = "2018"
 description = "Library to interact with rizin using rzpipe."
@@ -11,8 +12,13 @@ description = "Library to interact with rizin using rzpipe."
 # Repository
 repository = "https://github.com/rizinorg/rz-pipe/"
 
-keywords = ["rizin", "security", "exploitation", "program-analysis",
-"reverse-engineering"]
+keywords = [
+    "rizin",
+    "security",
+    "exploitation",
+    "program-analysis",
+    "reverse-engineering"
+]
 
 # Readme link
 readme = "README.md"
