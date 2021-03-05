@@ -24,7 +24,7 @@ fn main() {
         Some(_) => RzPipe::open(),
         None => RzPipe::spawn("/bin/ls".to_owned(), Some(opts)),
     }
-    .unwrap();
+    .unwrap_or(RzPipe::None);
 
     println!("{}", rzp.cmd("?e Hello World").unwrap());
 
