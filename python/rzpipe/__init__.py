@@ -27,6 +27,7 @@ Example:
 import os
 import sys
 import time
+import shutil
 
 try:
     import rzlang
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     if sys.version_info <= (3, 0):
         # Test rzpipe with local process
         print("[+] Testing python rzpipe local")
-        rlocal = open("/bin/ls")
+        rlocal = open(shutil.which("ls"))
         print(rlocal.cmd("pi 5"))
         # print rlocal.cmd("pn")
         info = rlocal.cmdj("ij")
@@ -93,7 +94,7 @@ if __name__ == "__main__":
         #
         #   Start 1 task
         print("[+] Testing python rzpipe local")
-        rlocal = open("/bin/ls")
+        rlocal = open(shutil.which("ls"))
         t = rlocal.cmd("pi 5", callback=callback)
         rlocal.wait(t)  # Wait for task end
         info = rlocal.cmdj("ij")
