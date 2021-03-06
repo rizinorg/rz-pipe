@@ -150,6 +150,12 @@ class OpenBase(object):
         if filename.startswith("#!pipe"):
             raise Exception("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.quit()
+
     def _cmd_pipe(self, cmd):
         out = b""
         cmd = cmd.strip().replace("\n", ";")
