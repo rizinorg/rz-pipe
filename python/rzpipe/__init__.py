@@ -27,7 +27,6 @@ Example:
 import os
 import sys
 import time
-import shutil
 
 try:
     import rzlang
@@ -37,19 +36,14 @@ except ImportError:
 VERSION = "0.1.0"
 
 from .open_sync import open
-
+from shutil import which
 
 def version():
-    """Return string with the version of the rzpipe library
-        """
+    """Return string with the version of the rzpipe library"""
     return VERSION
 
 
-"""open class is now in open_base.py"""
-
-# Hello World
 if __name__ == "__main__":
-
     print("[+] Spawning rizin tcp and http servers")
     os.system("pkill rizin")
     os.system("rizin -qc.:9080 /bin/ls &")
@@ -59,7 +53,7 @@ if __name__ == "__main__":
     if sys.version_info <= (3, 0):
         # Test rzpipe with local process
         print("[+] Testing python rzpipe local")
-        rlocal = open(shutil.which("ls"))
+        rlocal = open(which("ls"))
         print(rlocal.cmd("pi 5"))
         # print rlocal.cmd("pn")
         info = rlocal.cmdj("ij")
@@ -89,12 +83,13 @@ if __name__ == "__main__":
         def callback(result):
             print(result)
 
+
         #
         # Test rzpipe with local process
         #
         #   Start 1 task
         print("[+] Testing python rzpipe local")
-        rlocal = open(shutil.which("ls"))
+        rlocal = open(which("ls"))
         t = rlocal.cmd("pi 5", callback=callback)
         rlocal.wait(t)  # Wait for task end
         info = rlocal.cmdj("ij")

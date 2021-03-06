@@ -9,7 +9,7 @@ base class for new open objects from open_sync and open_async. Code derived from
 import os
 import sys
 import json
-import shutil
+from shutil import which
 import platform
 
 from subprocess import Popen, PIPE
@@ -42,7 +42,7 @@ if os.name == "nt":
     cbWritten = c_ulong(0)
 
 
-def in_rzlang():
+def has_rzlang():
     return rzlang is not None and rzlang.cmd is not None
 
 
@@ -59,13 +59,10 @@ def jo2po(jo):
 
 
 def get_rizin_path():
-    try:
-        which = shutil.which
-    except AttributeError:
-        # In python 2 doesn't exist which function
-        from distutils.spawn import find_executable
-
-        which = find_executable
+    """
+    Helper to get the path to the rizin binary.
+    :return:
+    """
 
     bin_file = which("rizin")
 
@@ -86,38 +83,41 @@ def get_rizin_path():
 
 
 class OpenBase(object):
-    """Class representing an rzpipe connection with a running rizin instance
-        Class body derived from __init__.py "open" class.
+    """
+    Class representing an rzpipe connection with a running rizin instance
+    Class body derived from __init__.py "open" class.
+    """
 
-
+    def __init__(self, filename="", flags=None):
         """
+        Open a new rizin pipe
+        The 'filename' can be one of the following:
 
-    def __init__(self, filename="", flags=[]):
-        """Open a new rizin pipe
-                The 'filename' can be one of the following:
+        * absolute or relative path to file
+        * http://<host>:<port> to connect to an rizin webserver
+        * tcp://<host>:<port> to connect to an rizin tcp server
+        * #!pipe when launching it from rizin via RzLang.pipe
 
-                * absolute or relative path to file
-                * http://<host>:<port> to connect to an rizin webserver
-                * tcp://<host>:<port> to connect to an rizin tcp server
-                * #!pipe when launching it from rizin via RzLang.pipe
-
-                Args:
-                    filename (str): path to filename or uri
-                    flags (list of str): arguments, either in comapct form
-                        ("-wdn") or sepparated by commas ("-w","-d","-n")
-                Returns:
-                    Returns an object with methods to interact with rizin via commands
-                """
-        self.asyn = False
-        if not filename and in_rzlang():
+        Args:
+            filename (str): path to filename or uri
+            flags (list of str): arguments, either in compact form
+                ("-wdn") or separated by commas ("-w","-d","-n")
+        Returns:
+            Returns an object with methods to interact with rizin via commands
+        """
+        if not flags:
+            flags = []
+        
+        self._async = False
+        if not filename and has_rzlang():
             self._cmd = self._cmd_rzlang
             return
         try:
             if os.name == "nt":
-                mypipename = os.environ["RZ_PIPE_PATH"]
+                pipe_name = os.environ["RZ_PIPE_PATH"]
                 while 1:
-                    hPipe = windll.kernel32.CreateFileW(
-                        mypipename,
+                    pipe_handle = windll.kernel32.CreateFileW(
+                        pipe_name,
                         GENERIC_READ | GENERIC_WRITE,
                         0,
                         None,
@@ -125,17 +125,17 @@ class OpenBase(object):
                         0,
                         None,
                     )
-                    if hPipe != INVALID_HANDLE_VALUE:
+                    if pipe_handle != INVALID_HANDLE_VALUE:
                         break
                     err = windll.kernel32.GetLastError()
                     print("Invalid Handle Value")
                     if err != ERROR_PIPE_BUSY:
-                        print("Could not open pipe:", hex(err), "\n")
+                        print("Could not open pipe:", hex(err), "\n", file=sys.stderr)
                         return
-                    elif (windll.kernel32.WaitNamedPipeW(mypipename, 20000)) == 0:
-                        print("Pipe busy\n")
+                    elif (windll.kernel32.WaitNamedPipeW(pipe_name, 20000)) == 0:
+                        print("Pipe busy\n", file=sys.stderr)
                         return
-                self.pipe = [hPipe, hPipe]
+                self.pipe = [pipe_handle, pipe_handle]
                 self._cmd = self._cmd_pipe
             else:
                 self.pipe = [
@@ -251,7 +251,7 @@ class OpenBase(object):
         try:
             data = json.loads(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
+            print("rzpipe.cmdj.Error: %s\n" % e, file=sys.stderr)
             data = None
         return data
 
@@ -266,7 +266,7 @@ class OpenBase(object):
         try:
             return jo2po(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
+            print("rzpipe.cmdj.Error: %s\n" % e, file=sys.stderr)
         return None
 
     def syscmd(self, cmd):
@@ -290,6 +290,6 @@ class OpenBase(object):
         try:
             data = json.loads(self.syscmd(cmd))
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.syscmdj.Error %s\n" % (e))
+            print("rzpipe.syscmdj.Error %s\n" % e, file=sys.stderr)
             data = None
         return data
