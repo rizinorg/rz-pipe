@@ -35,6 +35,9 @@ test3:
 uninstall:
 	rm -rf "$(PYTHON_INSTALL_DIR)"
 
+format:
+	black $(PWD)/**/*.py
+
 pub publish:
 	#LC_CTYPE=C python3 setup.py sdist upload -r pypi
 	#LC_CTYPE=C python setup.py sdist upload -r https://upload.pypi.org/pypi/
