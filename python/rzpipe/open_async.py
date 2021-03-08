@@ -19,7 +19,7 @@ from .open_base import OpenBase, get_rizin_path
 
 class open(OpenBase, ContextDecorator):
     # --------------------------------------------------------------------------
-    # Contenxt manager functions
+    # Context manager functions
     # --------------------------------------------------------------------------
     def __enter__(self):
         return self
@@ -34,10 +34,13 @@ class open(OpenBase, ContextDecorator):
         if not self._loop.is_closed():
             self._loop.close()
 
-    def __init__(self, filename="", flags=[], rizinhome=None):
+    def __init__(self, filename="", flags=None, rz_home=None):
         super(open, self).__init__(filename, flags)
 
-        self.rzhome = rizinhome
+        if flags is None:
+            flags = []
+
+        self.rz_home = rz_home
 
         if os.name == "nt":
             self._loop = asyncio.ProactorEventLoop()
@@ -47,7 +50,7 @@ class open(OpenBase, ContextDecorator):
             self._loop = asyncio.new_event_loop()
             watcher.attach_loop(self._loop)
 
-        self.asyn = True
+        self._async = True
 
         if filename.startswith("http://"):
             self._cmd_coro = self._cmd_http
@@ -80,7 +83,7 @@ class open(OpenBase, ContextDecorator):
             self._process_start_cmd = cmd
 
         else:
-            self.asyn = False
+            self._async = False
 
     def _callback_wrapper(self, future):
         result, callback = future.result()
@@ -103,12 +106,12 @@ class open(OpenBase, ContextDecorator):
     @asyncio.coroutine
     def _cmd_process(self, cmd, future, callback):
         if not hasattr(self, "process"):
-            if self.rzhome is not None:
-                if not os.path.isdir(self.rzhome):
+            if self.rz_home is not None:
+                if not os.path.isdir(self.rz_home):
                     raise Exception(
                         "`rizinhome` passed to `open` is invalid, leave it None or put a valid path to rizin folder"
                     )
-                rzpath = os.path.join(self.rzhome, "rizin")
+                rzpath = os.path.join(self.rz_home, "rizin")
                 if os.name == "nt":
                     rzpath += ".exe"
             else:
