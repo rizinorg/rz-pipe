@@ -38,6 +38,7 @@ VERSION = "0.1.0"
 from .open_sync import open
 from shutil import which
 
+
 def version():
     """Return string with the version of the rzpipe library"""
     return VERSION

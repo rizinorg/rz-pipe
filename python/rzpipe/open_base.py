@@ -107,7 +107,7 @@ class OpenBase(object):
         """
         if not flags:
             flags = []
-        
+
         self._async = False
         if not filename and has_rzlang():
             self._cmd = self._cmd_rzlang
@@ -200,8 +200,7 @@ class OpenBase(object):
         return rzlang.cmd(cmd)
 
     def quit(self):
-        """Quit current rzpipe session and kill
-                """
+        """Quit current rzpipe session and kill"""
         self.cmd("q")
         if hasattr(self, "process"):
             import subprocess
@@ -223,16 +222,16 @@ class OpenBase(object):
     # rizin commands
     def cmd(self, cmd, **kwargs):
         """Run an rizin command return string with result
-                Args:
-                    cmd (str): rizin command
-                Returns:
-                    Returns an string with the results of the command
+        Args:
+            cmd (str): rizin command
+        Returns:
+            Returns an string with the results of the command
 
-                res = self._cmd(cmd)
-                if res is not None:
-                    return res.strip()
-                return None
-                """
+        res = self._cmd(cmd)
+        if res is not None:
+            return res.strip()
+        return None
+        """
 
         res = self._cmd(cmd, **kwargs)
         if res is not None:
@@ -241,11 +240,11 @@ class OpenBase(object):
 
     def cmdj(self, cmd, **kwargs):
         """Same as cmd() but evaluates JSONs and returns an object
-                Args:
-                    cmdj (str): rizin command
-                Returns:
-                    Returns a JSON object respresenting the parsed JSON
-                """
+        Args:
+            cmdj (str): rizin command
+        Returns:
+            Returns a JSON object respresenting the parsed JSON
+        """
         result = self.cmd(cmd, **kwargs)
 
         try:
@@ -257,11 +256,11 @@ class OpenBase(object):
 
     def cmdJ(self, cmd, **kwargs):
         """Same as cmdj() but evaluates into a native Python Object
-                Args:
-                    cmdJ (str): rizin command
-                Returns:
-                    Returns a Python object respresenting the parsed JSON
-                """
+        Args:
+            cmdJ (str): rizin command
+        Returns:
+            Returns a Python object respresenting the parsed JSON
+        """
         result = self.cmd(cmd, **kwargs)
         try:
             return jo2po(result)
@@ -271,22 +270,22 @@ class OpenBase(object):
 
     def syscmd(self, cmd):
         """Executes a program and returns the output (stdout only)
-                Args:
-                    cmd (str): commandline shell command
-                Returns:
-                    Returns a string with the output
-                """
+        Args:
+            cmd (str): commandline shell command
+        Returns:
+            Returns a string with the output
+        """
         p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE)
         out, err = p.communicate()
         return out
 
     def syscmdj(self, cmd):
         """Executes a program and returns an object representing the parsed JSON of the output
-                Args:
-                    cmd (str): commandline shell command
-                Returns:
-                    Returns an object constructed by parsing the JSON returned by the command
-                """
+        Args:
+            cmd (str): commandline shell command
+        Returns:
+            Returns an object constructed by parsing the JSON returned by the command
+        """
         try:
             data = json.loads(self.syscmd(cmd))
         except (ValueError, KeyError, TypeError) as e:
