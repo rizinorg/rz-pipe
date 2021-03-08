@@ -84,7 +84,7 @@ class WrappedApiMethod(object):
 def register(cname, args, ret):
     ret2 = last = None
     if ret:
-        if ret[0] >= "A" and ret[0] <= "Z":
+        if "A" <= ret[0] <= "Z":
             x = ret.find("<")
             if x != -1:
                 ret = ret[0:x]
