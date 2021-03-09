@@ -22,6 +22,9 @@ symstall: uninstall
 twine:
 	sudo pip install twine
 
+pytest:
+	pytest -p no:cacheprovider  tests/
+
 test: test2 test3
 
 test2:
