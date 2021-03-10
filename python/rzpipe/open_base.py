@@ -224,6 +224,9 @@ class OpenBase(object):
         """Run an rizin command return string with result
         Args:
             cmd (str): rizin command
+            kwargs:
+                Only for open_async:
+                callback (typing.Callable): callback which is to be invoked after cmd has finished
         Returns:
             Returns an string with the results of the command
 
