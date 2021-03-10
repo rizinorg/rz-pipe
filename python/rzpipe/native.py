@@ -80,7 +80,7 @@ class WrappedApiMethod(object):
         return result
 
     def __get__(self, obj, type_):
-        if type_ is RCore:
+        if type_ is RzCore:
             self._o = obj._o
         return self
 
@@ -103,7 +103,7 @@ def register(cname, args, ret, lib=lib):
     return wrapped_method, method
 
 
-class RCore(Structure):  # 1
+class RzCore(Structure):  # 1
     def __init__(self, lib=lib):
         Structure.__init__(self)
         rz_core_new = lib.rz_core_new
@@ -127,7 +127,7 @@ class RCore(Structure):  # 1
 
 @contextlib.contextmanager
 def core():
-    c = RCore()
+    c = RzCore()
     yield c
     c.free()
 
@@ -135,7 +135,7 @@ def core():
 __all__ = [
     core.__name__,
     register.__name__,
-    RCore.__name__,
+    RzCore.__name__,
     WrappedRMethod.__name__,
     WrappedApiMethod.__name__,
 ]
