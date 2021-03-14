@@ -6,12 +6,11 @@ base class for new open objects from open_sync and open_async. Code derived from
 
 """
 
-import os
-import sys
 import json
-from shutil import which
+import os
 import platform
-
+import sys
+from shutil import which
 from subprocess import Popen, PIPE
 
 try:
@@ -25,7 +24,6 @@ except ImportError:
 
 if os.name == "nt":
     from ctypes import byref, c_ulong, create_string_buffer, windll
-    import msvcrt
 
     GENERIC_READ = 0x80000000
     GENERIC_WRITE = 0x40000000
@@ -107,9 +105,15 @@ class OpenBase(object):
             flags = []
 
         self._async = False
+
+        # Set cmd native as default
+        self.uri = filename
+        self._cmd = self._cmd_native
+
         if not filename and has_rzlang():
             self._cmd = self._cmd_rzlang
             return
+
         try:
             if os.name == "nt":
                 pipe_name = os.environ["RZ_PIPE_PATH"]
@@ -145,6 +149,7 @@ class OpenBase(object):
             self.url = "#!pipe"
             return
         except Exception:
+            # provided _cmd_native as a default, in case we land here
             pass
 
         if filename.startswith("#!pipe"):
