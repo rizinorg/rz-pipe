@@ -23,7 +23,8 @@ twine:
 	sudo pip install twine
 
 pytest:
-	pytest -p no:cacheprovider  tests/
+	@echo "Running the pytest"
+	-PYTHONPATH=$$PWD $(PYTHON) -m pytest -p no:cacheprovider  tests/
 
 test: test2 test3
 
