@@ -17,11 +17,10 @@ and return a native Python object.
 
 Example:
   $ python
-  > import rzpipe
-  > rz = rzpipe.open("/bin/ls")
-  > print(rz.cmd("pd 10"))
-  > print(rz.cmdj("aoj")[0]['size'])
-  > rz.quit()
+    > import rzpipe
+    > with rzpipe.open("/bin/ls") as rz:
+    >     print(rz.cmd("pd 10"))
+    >     print(rz.cmdj("aoj")[0]['size'])
 """
 
 import os

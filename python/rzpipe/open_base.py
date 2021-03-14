@@ -20,10 +20,8 @@ except ImportError:
     rzlang = None
 try:
     from .native import RzCore
-
-    has_native = True
 except ImportError:
-    has_native = False
+    RzCore = None
 
 if os.name == "nt":
     from ctypes import byref, c_ulong, create_string_buffer, windll
@@ -125,16 +123,17 @@ class OpenBase(object):
                         0,
                         None,
                     )
+
                     if pipe_handle != INVALID_HANDLE_VALUE:
                         break
+
                     err = windll.kernel32.GetLastError()
-                    print("Invalid Handle Value")
+
                     if err != ERROR_PIPE_BUSY:
-                        print("Could not open pipe:", hex(err), "\n", file=sys.stderr)
-                        return
+                        raise OSError("Invalid Handle Value: Could not open pipe: {0}".format(hex(err)))
+
                     elif (windll.kernel32.WaitNamedPipeW(pipe_name, 20000)) == 0:
-                        print("Pipe busy\n", file=sys.stderr)
-                        return
+                        raise OSError("Invalid Handle Value: Pipe busy")
                 self.pipe = [pipe_handle, pipe_handle]
                 self._cmd = self._cmd_pipe
             else:
@@ -145,10 +144,11 @@ class OpenBase(object):
                 self._cmd = self._cmd_pipe
             self.url = "#!pipe"
             return
-        except:
+        except Exception:
             pass
+
         if filename.startswith("#!pipe"):
-            raise Exception("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
+            raise ValueError("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
 
     def __enter__(self):
         return self
@@ -189,8 +189,8 @@ class OpenBase(object):
 
     def _cmd_native(self, cmd):
         cmd = cmd.strip().replace("\n", ";")
-        if not has_native:
-            raise Exception("No native ctypes connector available")
+        if not RzCore:
+            raise Exception("RzCore is None because there is no native rz_core library")
         if not hasattr(self, "native"):
             self.native = RzCore()
             self.native.cmd_str("o " + self.uri)
