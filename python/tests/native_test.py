@@ -5,6 +5,18 @@ from unittest import mock
 import pytest
 
 
+def delete_quietly(to_delete, key=None):
+    if not to_delete:
+        return
+    try:
+        if not key:
+            del to_delete
+            return
+        del to_delete[key]
+    except KeyError:
+        pass
+
+
 def mock_find_library(func=None):
     """
     Mock ctypes.util.find_library by default to return None to trigger path of native.py
@@ -27,9 +39,10 @@ def native():
     Fixture for the native module to test the import related side-effects.
     :return:
     """
+    delete_quietly(sys.modules, key="rzpipe.native")
     mod = importlib.import_module("rzpipe.native")
     yield mod
-    del sys.modules["rzpipe.native"]
+    delete_quietly(sys.modules, key="rzpipe.native")
 
 
 def test_rz_core_not_installed():
@@ -39,8 +52,10 @@ def test_rz_core_not_installed():
     """
     with pytest.raises(ImportError):
         with mock_find_library():
+            # Delete also before
+            delete_quietly(sys.modules, key="rzpipe.native")
             importlib.import_module("rzpipe.native")
-            del sys.modules["rzpipe.native"]
+            delete_quietly(sys.modules, key="rzpipe.native")
 
 
 def test_address_holder(native):
