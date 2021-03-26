@@ -22,6 +22,10 @@ symstall: uninstall
 twine:
 	sudo pip install twine
 
+pytest:
+	@echo "Running the pytest"
+	-PYTHONPATH=$$PWD $(PYTHON) -m pytest -p no:cacheprovider  tests/
+
 test: test2 test3
 
 test2:
@@ -34,6 +38,9 @@ test3:
 
 uninstall:
 	rm -rf "$(PYTHON_INSTALL_DIR)"
+
+format:
+	black $(PWD)/**/*.py
 
 pub publish:
 	#LC_CTYPE=C python3 setup.py sdist upload -r pypi

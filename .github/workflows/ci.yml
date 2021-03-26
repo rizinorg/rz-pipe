@@ -49,6 +49,8 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         python3 setup.py install --user
+        python3 -m pip install -r requirements-test.txt
+        make pytest
       working-directory: python
 
     - name: Build Python distribution packages
