@@ -19,7 +19,7 @@ try:
 except ImportError:
     rzlang = None
 try:
-    from .native import RCore
+    from .native import RzCore
 
     has_native = True
 except ImportError:
