@@ -99,7 +99,7 @@ def register(cname, args, ret):
     return wrapped_method, method
 
 
-class RCore(Structure):  # 1
+class RzCore(Structure):  # 1
     def __init__(self):
         Structure.__init__(self)
         rz_core_new = lib.rz_core_new
@@ -114,7 +114,7 @@ class RCore(Structure):  # 1
     free, rz_core_free = register("rz_core_free", "c_void_p", "c_void_p")
 
 
-#  c = RCore()
+#  c = RzCore()
 #  c.cmd_str("o /bin/ls")
 #  print(c)
 #  print(c.cmd_str("s entry0;pd 20"))
