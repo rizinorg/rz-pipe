@@ -19,7 +19,7 @@ try:
 except ImportError:
     rzlang = None
 try:
-    from .native import RCore
+    from .native import RzCore
 
     has_native = True
 except ImportError:
@@ -186,7 +186,7 @@ class OpenBase(object):
         if not has_native:
             raise Exception("No native ctypes connector available")
         if not hasattr(self, "native"):
-            self.native = RCore()
+            self.native = RzCore()
             self.native.cmd_str("o " + self.uri)
         return self.native.cmd_str(cmd)
 
