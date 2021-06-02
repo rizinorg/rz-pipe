@@ -8,11 +8,11 @@ This script use code from old __init__.py open object
 import re
 import socket
 import time
-import urllib
 import os
 from subprocess import Popen, PIPE
 from urllib.request import urlopen
 from urllib.error import URLError
+from urllib.parse import quote
 from .open_base import OpenBase
 
 
@@ -23,8 +23,10 @@ except ImportError:
 
 
 class open(OpenBase):
-    def __init__(self, filename="", flags=[], rizinhome=None):
+    def __init__(self, filename="", flags=None, rizin_home=None):
         super(open, self).__init__(filename, flags)
+        if flags is None:
+            flags = []
         if filename.startswith("http://"):
             self._cmd = self._cmd_http
             self.uri = filename + "/cmd"
@@ -34,18 +36,19 @@ class open(OpenBase):
         elif filename.startswith("tcp://"):
             r = re.match(r"tcp://(\d+\.\d+.\d+.\d+):(\d+)/?", filename)
             if not r:
-                raise Exception("String doesn't match tcp format")
+                raise ValueError("You must provide the tcp address in this format:\n"
+                                 "tcp://xxx.xxx.xxx.xxx:yyyy")
             self._cmd = self._cmd_tcp
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.conn.connect((r.group(1), int(r.group(2))))
         elif filename:
             self._cmd = self._cmd_process
-            if rizinhome is not None:
-                if not os.path.isdir(rizinhome):
+            if rizin_home is not None:
+                if not os.path.isdir(rizin_home):
                     raise Exception(
                         "`rizinhome` passed is invalid, leave it None or put a valid path to rizin folder"
                     )
-                rze = os.path.join(rizinhome, "rizin")
+                rze = os.path.join(rizin_home, "rizin")
             else:
                 rze = "rizin"
             if os.name == "nt":
@@ -57,15 +60,14 @@ class open(OpenBase):
                 self.process = Popen(
                     cmd, shell=False, stdin=PIPE, stdout=PIPE, bufsize=0
                 )
-            except:
+            except Exception:
                 raise Exception("ERROR: Cannot find rizin in PATH")
             self.process.stdout.read(1)  # Reads initial \x00
             # make it non-blocking to speedup reading
             self.nonblocking = True
-            if self.nonblocking:
-                fd = self.process.stdout.fileno()
-                if not self.__make_non_blocking(fd):
-                    Exception("ERROR: Cannot make stdout pipe non-blocking")
+            fd = self.process.stdout.fileno()
+            if not self.__make_non_blocking(fd):
+                raise Exception("ERROR: Cannot make stdout pipe non-blocking")
 
     @staticmethod
     def __make_non_blocking(fd):
@@ -94,7 +96,7 @@ class open(OpenBase):
         h = msvcrt.get_osfhandle(fd)
 
         PIPE_NOWAIT = DWORD(0x00000001)
-        res = windll.kernel32.SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
+        res = SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
         return res != 0
 
     def _cmd_process(self, cmd):
@@ -107,7 +109,7 @@ class open(OpenBase):
             if self.nonblocking:
                 try:
                     foo = r.read(4096)
-                except:
+                except Exception:
                     continue
             else:
                 foo = r.read(1)
@@ -126,8 +128,8 @@ class open(OpenBase):
 
     def _cmd_http(self, cmd):
         try:
-            quocmd = urllib.parse.quote(cmd)
-            response = urlopen("{uri}/{cmd}".format(uri=self.uri, cmd=quocmd))
+            quoted_cmd = quote(cmd)
+            response = urlopen("{uri}/{cmd}".format(uri=self.uri, cmd=quoted_cmd))
             return response.read().decode("utf-8", errors="ignore")
         except URLError:
             pass

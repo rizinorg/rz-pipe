@@ -6,12 +6,11 @@ base class for new open objects from open_sync and open_async. Code derived from
 
 """
 
-import os
-import sys
 import json
-import shutil
+import os
 import platform
-
+import sys
+from shutil import which
 from subprocess import Popen, PIPE
 
 try:
@@ -20,14 +19,11 @@ except ImportError:
     rzlang = None
 try:
     from .native import RzCore
-
-    has_native = True
 except ImportError:
-    has_native = False
+    RzCore = None
 
 if os.name == "nt":
     from ctypes import byref, c_ulong, create_string_buffer, windll
-    import msvcrt
 
     GENERIC_READ = 0x80000000
     GENERIC_WRITE = 0x40000000
@@ -42,7 +38,7 @@ if os.name == "nt":
     cbWritten = c_ulong(0)
 
 
-def in_rzlang():
+def has_rzlang():
     return rzlang is not None and rzlang.cmd is not None
 
 
@@ -59,13 +55,10 @@ def jo2po(jo):
 
 
 def get_rizin_path():
-    try:
-        which = shutil.which
-    except AttributeError:
-        # In python 2 doesn't exist which function
-        from distutils.spawn import find_executable
-
-        which = find_executable
+    """
+    Helper to get the path to the rizin binary.
+    :return:
+    """
 
     bin_file = which("rizin")
 
@@ -86,38 +79,47 @@ def get_rizin_path():
 
 
 class OpenBase(object):
-    """Class representing an rzpipe connection with a running rizin instance
-        Class body derived from __init__.py "open" class.
+    """
+    Class representing an rzpipe connection with a running rizin instance
+    Class body derived from __init__.py "open" class.
+    """
 
-
+    def __init__(self, filename="", flags=None):
         """
+        Open a new rizin pipe
+        The 'filename' can be one of the following:
 
-    def __init__(self, filename="", flags=[]):
-        """Open a new rizin pipe
-                The 'filename' can be one of the following:
+        * absolute or relative path to file
+        * http://<host>:<port> to connect to an rizin webserver
+        * tcp://<host>:<port> to connect to an rizin tcp server
+        * #!pipe when launching it from rizin via RzLang.pipe
 
-                * absolute or relative path to file
-                * http://<host>:<port> to connect to an rizin webserver
-                * tcp://<host>:<port> to connect to an rizin tcp server
-                * #!pipe when launching it from rizin via RzLang.pipe
+        Args:
+            filename (str): path to filename or uri
+            flags (list of str): arguments, either in compact form
+                ("-wdn") or separated by commas ("-w","-d","-n")
+        Returns:
+            Returns an object with methods to interact with rizin via commands
+        """
+        if not flags:
+            flags = []
 
-                Args:
-                    filename (str): path to filename or uri
-                    flags (list of str): arguments, either in comapct form
-                        ("-wdn") or sepparated by commas ("-w","-d","-n")
-                Returns:
-                    Returns an object with methods to interact with rizin via commands
-                """
-        self.asyn = False
-        if not filename and in_rzlang():
+        self._async = False
+
+        # Set cmd native as default
+        self.uri = filename
+        self._cmd = self._cmd_native
+
+        if not filename and has_rzlang():
             self._cmd = self._cmd_rzlang
             return
+
         try:
             if os.name == "nt":
-                mypipename = os.environ["RZ_PIPE_PATH"]
+                pipe_name = os.environ["RZ_PIPE_PATH"]
                 while 1:
-                    hPipe = windll.kernel32.CreateFileW(
-                        mypipename,
+                    pipe_handle = windll.kernel32.CreateFileW(
+                        pipe_name,
                         GENERIC_READ | GENERIC_WRITE,
                         0,
                         None,
@@ -125,17 +127,18 @@ class OpenBase(object):
                         0,
                         None,
                     )
-                    if hPipe != INVALID_HANDLE_VALUE:
+
+                    if pipe_handle != INVALID_HANDLE_VALUE:
                         break
+
                     err = windll.kernel32.GetLastError()
-                    print("Invalid Handle Value")
+
                     if err != ERROR_PIPE_BUSY:
-                        print("Could not open pipe:", hex(err), "\n")
-                        return
-                    elif (windll.kernel32.WaitNamedPipeW(mypipename, 20000)) == 0:
-                        print("Pipe busy\n")
-                        return
-                self.pipe = [hPipe, hPipe]
+                        raise OSError("Invalid Handle Value: Could not open pipe: {0}".format(hex(err)))
+
+                    elif (windll.kernel32.WaitNamedPipeW(pipe_name, 20000)) == 0:
+                        raise OSError("Invalid Handle Value: Pipe busy")
+                self.pipe = [pipe_handle, pipe_handle]
                 self._cmd = self._cmd_pipe
             else:
                 self.pipe = [
@@ -145,10 +148,18 @@ class OpenBase(object):
                 self._cmd = self._cmd_pipe
             self.url = "#!pipe"
             return
-        except:
+        except Exception:
+            # provided _cmd_native as a default, in case we land here
             pass
+
         if filename.startswith("#!pipe"):
-            raise Exception("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
+            raise ValueError("ERROR: Cannot use #!pipe without RZPIPE_{IN|OUT} env")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.quit()
 
     def _cmd_pipe(self, cmd):
         out = b""
@@ -183,8 +194,8 @@ class OpenBase(object):
 
     def _cmd_native(self, cmd):
         cmd = cmd.strip().replace("\n", ";")
-        if not has_native:
-            raise Exception("No native ctypes connector available")
+        if not RzCore:
+            raise Exception("RzCore is None because there is no native rz_core library")
         if not hasattr(self, "native"):
             self.native = RzCore()
             self.native.cmd_str("o " + self.uri)
@@ -194,8 +205,7 @@ class OpenBase(object):
         return rzlang.cmd(cmd)
 
     def quit(self):
-        """Quit current rzpipe session and kill
-                """
+        """Quit current rzpipe session and kill"""
         self.cmd("q")
         if hasattr(self, "process"):
             import subprocess
@@ -217,16 +227,19 @@ class OpenBase(object):
     # rizin commands
     def cmd(self, cmd, **kwargs):
         """Run an rizin command return string with result
-                Args:
-                    cmd (str): rizin command
-                Returns:
-                    Returns an string with the results of the command
+        Args:
+            cmd (str): rizin command
+            kwargs:
+                Only for open_async:
+                callback (typing.Callable): callback which is to be invoked after cmd has finished
+        Returns:
+            Returns an string with the results of the command
 
-                res = self._cmd(cmd)
-                if res is not None:
-                    return res.strip()
-                return None
-                """
+        res = self._cmd(cmd)
+        if res is not None:
+            return res.strip()
+        return None
+        """
 
         res = self._cmd(cmd, **kwargs)
         if res is not None:
@@ -235,55 +248,55 @@ class OpenBase(object):
 
     def cmdj(self, cmd, **kwargs):
         """Same as cmd() but evaluates JSONs and returns an object
-                Args:
-                    cmdj (str): rizin command
-                Returns:
-                    Returns a JSON object respresenting the parsed JSON
-                """
+        Args:
+            cmdj (str): rizin command
+        Returns:
+            Returns a JSON object respresenting the parsed JSON
+        """
         result = self.cmd(cmd, **kwargs)
 
         try:
             data = json.loads(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
+            print("rzpipe.cmdj.Error: %s\n" % e, file=sys.stderr)
             data = None
         return data
 
     def cmdJ(self, cmd, **kwargs):
         """Same as cmdj() but evaluates into a native Python Object
-                Args:
-                    cmdJ (str): rizin command
-                Returns:
-                    Returns a Python object respresenting the parsed JSON
-                """
+        Args:
+            cmdJ (str): rizin command
+        Returns:
+            Returns a Python object respresenting the parsed JSON
+        """
         result = self.cmd(cmd, **kwargs)
         try:
             return jo2po(result)
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.cmdj.Error: %s\n" % (e))
+            print("rzpipe.cmdj.Error: %s\n" % e, file=sys.stderr)
         return None
 
     def syscmd(self, cmd):
         """Executes a program and returns the output (stdout only)
-                Args:
-                    cmd (str): commandline shell command
-                Returns:
-                    Returns a string with the output
-                """
+        Args:
+            cmd (str): commandline shell command
+        Returns:
+            Returns a string with the output
+        """
         p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE)
         out, err = p.communicate()
         return out
 
     def syscmdj(self, cmd):
         """Executes a program and returns an object representing the parsed JSON of the output
-                Args:
-                    cmd (str): commandline shell command
-                Returns:
-                    Returns an object constructed by parsing the JSON returned by the command
-                """
+        Args:
+            cmd (str): commandline shell command
+        Returns:
+            Returns an object constructed by parsing the JSON returned by the command
+        """
         try:
             data = json.loads(self.syscmd(cmd))
         except (ValueError, KeyError, TypeError) as e:
-            sys.stderr.write("rzpipe.syscmdj.Error %s\n" % (e))
+            print("rzpipe.syscmdj.Error %s\n" % e, file=sys.stderr)
             data = None
         return data
