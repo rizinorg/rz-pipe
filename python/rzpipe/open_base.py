@@ -139,13 +139,12 @@ class OpenBase(object):
                     elif (windll.kernel32.WaitNamedPipeW(pipe_name, 20000)) == 0:
                         raise OSError("Invalid Handle Value: Pipe busy")
                 self.pipe = [pipe_handle, pipe_handle]
-                self._cmd = self._cmd_pipe
             else:
                 self.pipe = [
                     int(os.environ["RZ_PIPE_IN"]),
                     int(os.environ["RZ_PIPE_OUT"]),
                 ]
-                self._cmd = self._cmd_pipe
+            self._cmd = self._cmd_pipe
             self.url = "#!pipe"
             return
         except Exception:
