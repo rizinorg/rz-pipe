@@ -1,34 +1,3 @@
-// rizin - LGPL - Copyright 2015 - nibble
-
-/*
-Package rzpipe allows to call rizin commands from Go. A simple hello world would
-look like the following snippet:
-
-	package main
-
-	import (
-		"fmt"
-		"github.com/rizin/rz-pipe-go"
-	)
-
-	func main() {
-		rzp, err := rzpipe.NewPipe("malloc://256")
-		if err != nil {
-			panic(err)
-		}
-		defer rzp.Close()
-
-		_, err = rzp.Cmd("w Hello World")
-		if err != nil {
-			panic(err)
-		}
-		buf, err := rzp.Cmd("ps")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(buf)
-	}
-*/
 package rzpipe
 
 import (
@@ -73,11 +42,11 @@ func NewPipe(file string) (*Pipe, error) {
 }
 
 func newPipeFd() (*Pipe, error) {
-	rzpipeIn := os.Getenv("RZPIPE_IN")
-	rzpipeOut := os.Getenv("RZPIPE_OUT")
+	rzpipeIn := os.Getenv("RZ_PIPE_IN")
+	rzpipeOut := os.Getenv("RZ_PIPE_OUT")
 
 	if rzpipeIn == "" || rzpipeOut == "" {
-		return nil, fmt.Errorf("missing RZPIPE_{IN,OUT} vars")
+		return nil, fmt.Errorf("missing RZ_PIPE_{IN,OUT} vars")
 	}
 
 	rzpipeInFd, err := strconv.Atoi(rzpipeIn)
@@ -90,8 +59,8 @@ func newPipeFd() (*Pipe, error) {
 		return nil, fmt.Errorf("failed to convert OUT into file descriptor")
 	}
 
-	stdout := os.NewFile(uintptr(rzpipeInFd), "RZPIPE_IN")
-	stdin := os.NewFile(uintptr(rzpipeOutFd), "RZPIPE_OUT")
+	stdout := os.NewFile(uintptr(rzpipeInFd), "RZ_PIPE_IN")
+	stdin := os.NewFile(uintptr(rzpipeOutFd), "RZ_PIPE_OUT")
 
 	rzp := &Pipe{
 		File:   "",
