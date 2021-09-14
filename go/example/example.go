@@ -26,17 +26,17 @@ func main() {
 		path = ""
 	}
 
-	r2p, err := rzpipe.NewPipe(path)
+	rzp, err := rzpipe.NewPipe(path)
 	if err != nil {
 		panic(err)
 	}
-	defer r2p.Close()
+	defer rzp.Close()
 
-	_, err = r2p.Cmd("aaaa")
+	_, err = rzp.Cmd("aaaa")
 	if err != nil {
 		panic(err)
 	}
-	buf, err := r2p.Cmd("pi 10")
+	buf, err := rzp.Cmd("pi 10")
 	if err != nil {
 		panic(err)
 	}
