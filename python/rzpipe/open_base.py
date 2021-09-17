@@ -46,7 +46,7 @@ def jo2po(jo):
     from collections import namedtuple
 
     def _json_object_hook(d):
-        keys = [x.replace('.', '_') if x != 'class' else 'bin_class' for x in d.keys()]
+        keys = [x.replace('.', '_') if x != 'class' else 'klass' for x in d.keys()]
         return namedtuple("X", keys)(*d.values())
 
     def json2obj(data):
