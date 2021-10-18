@@ -254,6 +254,12 @@ class OpenBase(object):
             Returns a JSON object respresenting the parsed JSON
         """
         result = self.cmd(cmd, **kwargs)
+        if result is None:
+            return None
+
+        result = result.strip()
+        if result == "":
+            return None
 
         try:
             data = json.loads(result)
@@ -270,6 +276,13 @@ class OpenBase(object):
             Returns a Python object respresenting the parsed JSON
         """
         result = self.cmd(cmd, **kwargs)
+        if result is None:
+            return None
+
+        result = result.strip()
+        if result == "":
+            return None
+
         try:
             return jo2po(result)
         except (ValueError, KeyError, TypeError) as e:
