@@ -42,12 +42,10 @@ impl Rz {
         let pipe = open_pipe!(path.as_ref());
         match pipe {
             // This means that path is `Some` or we have an open session.
-            Ok(pipe) => {
-                Ok(Rz {
-                    pipe,
-                    readin: String::new(),
-                })
-            }
+            Ok(pipe) => Ok(Rz {
+                pipe,
+                readin: String::new(),
+            }),
             Err(_) => {
                 Err("Path could not be resolved or we do not have an open session!".to_owned())
             }

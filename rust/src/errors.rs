@@ -66,7 +66,6 @@ pub enum RzPipeThreadError {
     Other,
 }
 
-
 #[derive(Error, Debug)]
 pub enum RzPipeSpawnError {
     #[error("json of cmdj invocation is empty")]
@@ -88,7 +87,6 @@ pub enum RzPipeSpawnError {
     Other,
 }
 
-
 #[derive(Error, Debug)]
 pub enum RzPipeLangError {
     #[error("Could not read until buffered reader until the end: {0}")]
@@ -104,7 +102,6 @@ pub enum RzPipeLangError {
     Other,
 }
 
-
 #[derive(Error, Debug)]
 pub enum RzPipeHttpError {
     #[error("utf-8 decode error: `{0}`")]
@@ -116,7 +113,6 @@ pub enum RzPipeHttpError {
     #[error("root cause of the error is unknown")]
     Other,
 }
-
 
 #[derive(Error, Debug)]
 pub enum RzPipeTcpError {
@@ -138,4 +134,3 @@ pub enum RzPipeTcpError {
     #[error("root cause of the error is unknown")]
     Other,
 }
-

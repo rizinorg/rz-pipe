@@ -1,7 +1,7 @@
 use rzpipe::RzPipe;
 use std::sync::Arc;
 
-  fn main() {
+fn main() {
     // First we define a callback. It doesn't block and gets called after a thread receives output from rzpipe
     // Note: First argument to the callback is the thread id, second one the rzpipe output
     let callback = Arc::new(|id, result| {
@@ -15,7 +15,7 @@ use std::sync::Arc;
         vec!["/bin/ls", "/bin/id", "/bin/cat"],
         vec![None, None, None],
         Some(callback),
-        ) {
+    ) {
         Ok(p) => p,
         Err(e) => {
             println!("Error spawning Pipes: {}", e);
