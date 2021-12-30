@@ -1,5 +1,3 @@
-use serde_json;
-
 use rzpipe::RzPipe;
 
 fn main() {

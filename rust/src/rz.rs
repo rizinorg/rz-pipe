@@ -78,7 +78,7 @@ impl Rz {
     }
 
     pub fn recv_json(&mut self) -> Value {
-        let mut res = self.recv().replace("\n", "");
+        let mut res = self.recv().replace('\n', "");
         if res.is_empty() {
             res = "{}".to_owned();
         }

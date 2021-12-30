@@ -1,10 +1,8 @@
-use serde_json;
-
 use rzpipe::RzPipe;
 use rzpipe::RzPipeSpawnOptions;
 
 fn test_trim() {
-    let mut ns = RzPipe::spawn("/bin/ls".to_owned(), None).unwrap();
+    let mut ns = RzPipe::spawn("/bin/ls", None).unwrap();
     println!("(({}))", ns.cmd("\n\n?e hello world\n\n").unwrap());
     println!("(({}))", ns.cmd("\n\n?e hello world\n\n").unwrap());
     println!("(({}))", ns.cmd("\n\n?e hello world\n\n").unwrap());
@@ -22,7 +20,7 @@ fn main() {
     };
     let mut rzp = match RzPipe::in_session() {
         Some(_) => RzPipe::open(),
-        None => RzPipe::spawn("/bin/ls".to_owned(), Some(opts)),
+        None => RzPipe::spawn("/bin/ls", Some(opts)),
     }
     .unwrap_or(RzPipe::None);
 

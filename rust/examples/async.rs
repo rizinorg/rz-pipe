@@ -6,7 +6,7 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
 
-const FILENAME: &'static str = "/bin/ls";
+const FILENAME: &str = "/bin/ls";
 
 pub struct RzPipeAsync {
     tx: Sender<String>,
@@ -21,10 +21,10 @@ impl RzPipeAsync {
         let (tx, rx) = channel(); // query
         let (tx2, rx2) = channel(); // result
         RzPipeAsync {
-            tx: tx,
-            rx: rx,
-            tx2: tx2,
-            rx2: rx2,
+            tx,
+            rx,
+            tx2,
+            rx2,
             cbs: Vec::new(),
         }
     }
@@ -44,7 +44,7 @@ impl RzPipeAsync {
         let child = thread::spawn(move || {
             let mut rzp = match RzPipe::in_session() {
                 Some(_) => RzPipe::open(),
-                None => RzPipe::spawn(FILENAME.to_owned(), None),
+                None => RzPipe::spawn(FILENAME, None),
             }
             .unwrap_or(RzPipe::None);
             loop {

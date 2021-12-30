@@ -1,5 +1,4 @@
 use rzpipe::RzPipe;
-use serde_json;
 
 fn main() {
     let mut rzp = RzPipe::http("localhost:9080").unwrap();
