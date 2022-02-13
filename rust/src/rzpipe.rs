@@ -4,24 +4,24 @@
 
 use std::env;
 use std::fs::File;
-use std::io::BufReader;
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::Path;
 use std::process;
 use std::process::Command;
 use std::process::Stdio;
 use std::str;
-use std::sync::Arc;
 use std::sync::mpsc;
+use std::sync::Arc;
 use std::thread;
 
 use libc;
 use reqwest;
 use serde_json::Value;
 
-use crate::{RzPipeError, RzPipeHttpError, RzPipeSpawnError, RzPipeTcpError, RzPipeThreadError};
 use crate::errors::RzPipeLangError;
+use crate::{RzPipeError, RzPipeHttpError, RzPipeSpawnError, RzPipeTcpError, RzPipeThreadError};
 
 /// File descriptors to the parent rizin process.
 pub struct RzPipeLang {
@@ -45,8 +45,8 @@ pub struct RzPipeHttp {
 }
 
 /// Stores thread metadata
-/// It stores both a sending and receiving end to the thread, allowing 
-/// convenient interaction. So we can send commands using 
+/// It stores both a sending and receiving end to the thread, allowing
+/// convenient interaction. So we can send commands using
 /// RzPipeThread::send() and fetch outputs using RzPipeThread::recv()
 pub struct RzPipeThread {
     rzrecv: mpsc::Receiver<String>,
@@ -71,10 +71,7 @@ pub enum RzPipe {
 }
 
 fn atoi(k: &str) -> i32 {
-    match k.parse::<i32>() {
-        Ok(val) => val,
-        Err(_) => -1,
-    }
+    k.parse::<i32>().unwrap_or(-1)
 }
 
 fn getenv(k: &str) -> i32 {
@@ -97,21 +94,21 @@ fn process_result(res: Vec<u8>) -> Result<String, String> {
 
 #[macro_export]
 macro_rules! open_pipe {
-	() => {
-            RzPipe::open(),
-        };
-	($x: expr) => {
-		match $x {
-			Some(path) => RzPipe::spawn(path, None),
-			None => RzPipe::open(),
-		}
-	};
-	($x: expr, $y: expr) => {
-		match $x $y {
-			Some(path, opts) => RzPipe::spawn(path, opts),
-			(None, None) => RzPipe::open(),
-		}
-	}
+    () => {
+        RzPipe::open(),
+    };
+    ($x: expr) => {
+        match $x {
+            Some(path) => RzPipe::spawn(path, None),
+            None => RzPipe::open(),
+        }
+    };
+    ($x: expr, $y: expr) => {
+        match $x $y {
+            Some(path, opts) => RzPipe::spawn(path, opts),
+            (None, None) => RzPipe::open(),
+        }
+    }
 }
 
 impl RzPipe {
@@ -141,20 +138,36 @@ impl RzPipe {
 
     pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeError> {
         match *self {
-            RzPipe::Pipe(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Lang(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Tcp(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Http(ref mut x) => x.cmd(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::None => Err(RzPipeError::CmdIsNoop)
+            RzPipe::Pipe(ref mut x) => x
+                .cmd(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Lang(ref mut x) => x
+                .cmd(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Tcp(ref mut x) => x
+                .cmd(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Http(ref mut x) => x
+                .cmd(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::None => Err(RzPipeError::CmdIsNoop),
         }
     }
 
     pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeError> {
         match *self {
-            RzPipe::Pipe(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Lang(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Tcp(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
-            RzPipe::Http(ref mut x) => x.cmdj(cmd.trim()).map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Pipe(ref mut x) => x
+                .cmdj(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Lang(ref mut x) => x
+                .cmdj(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Tcp(ref mut x) => x
+                .cmdj(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
+            RzPipe::Http(ref mut x) => x
+                .cmdj(cmd.trim())
+                .map_err(|e| RzPipeError::ConcretePipe(e.to_string())),
             RzPipe::None => Err(RzPipeError::CmdjIsNoop),
         }
     }
@@ -165,7 +178,9 @@ impl RzPipe {
             RzPipe::Lang(ref mut x) => x.close(),
             RzPipe::Tcp(ref mut x) => x.close(),
             RzPipe::Http(ref mut x) => x.close(),
-            RzPipe::None => { eprintln!("{:?}", RzPipeError::CloseIsNoop) }
+            RzPipe::None => {
+                eprintln!("{:?}", RzPipeError::CloseIsNoop)
+            }
         }
     }
 
@@ -218,7 +233,8 @@ impl RzPipe {
 
         // flush out the initial null byte.
         let mut w = [0; 1];
-        sout.read_exact(&mut w).map_err(|e| RzPipeError::FlushInitialNullByte(e))?;
+        sout.read_exact(&mut w)
+            .map_err(RzPipeError::FlushInitialNullByte)?;
 
         let res = RzPipeSpawn {
             read: BufReader::new(sout),
@@ -275,12 +291,9 @@ impl RzPipe {
                     }
                     let res = rz.cmdj(&cmd).unwrap().to_string();
                     let result = htx.send(res.clone());
-                    match result {
-                        Err(e) => {
-                            eprintln!("{}", e.to_string().to_owned());
-                            break 'outer;
-                        }
-                        Ok(_) => {}
+                    if let Err(e) = result {
+                        eprintln!("{}", e);
+                        break 'outer;
                     }
                     if let Some(cbs) = cb.clone() {
                         thread::spawn(move || {
@@ -302,14 +315,21 @@ impl RzPipe {
 
 impl RzPipeThread {
     pub fn send(&self, cmd: String) -> Result<(), RzPipeThreadError> {
-        self.rzsend.send(cmd).map_err(|e| RzPipeThreadError::ChannelSend(e.to_string().to_string()))
+        self.rzsend
+            .send(cmd)
+            .map_err(|e| RzPipeThreadError::ChannelSend(e.to_string()))
     }
 
     pub fn recv(&self, block: bool) -> Result<String, RzPipeThreadError> {
         if block {
-            return self.rzrecv.recv().map_err(|e| RzPipeThreadError::ChannelRecv(e.to_string().to_string()));
+            return self
+                .rzrecv
+                .recv()
+                .map_err(|e| RzPipeThreadError::ChannelRecv(e.to_string()));
         }
-        self.rzrecv.try_recv().map_err(|e| RzPipeThreadError::ChannelTryRecv(e.to_string().to_string()))
+        self.rzrecv
+            .try_recv()
+            .map_err(|e| RzPipeThreadError::ChannelTryRecv(e.to_string()))
     }
 }
 
@@ -318,22 +338,22 @@ impl RzPipeSpawn {
         let cmd = cmd.to_owned() + "\n";
         self.write
             .write_all(cmd.as_bytes())
-            .map_err(|e| RzPipeSpawnError::WriteCmd(e.to_string().to_owned()))?;
+            .map_err(|e| RzPipeSpawnError::WriteCmd(e.to_string()))?;
 
         let mut res: Vec<u8> = Vec::new();
         self.read
             .read_until(0u8, &mut res)
-            .map_err(|e| RzPipeSpawnError::ReadCmdResponse(e.to_string().to_owned()))?;
+            .map_err(|e| RzPipeSpawnError::ReadCmdResponse(e.to_string()))?;
 
-        process_result(res).map_err(|e| RzPipeSpawnError::ProcessResult(e.to_string().to_owned()))
+        process_result(res).map_err(RzPipeSpawnError::ProcessResult)
     }
 
     pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeSpawnError> {
         let result = self.cmd(cmd)?;
-        if result == "" {
+        if result.is_empty() {
             return Err(RzPipeSpawnError::EmptyJson);
         }
-        serde_json::from_str(&result).map_err(|e| RzPipeSpawnError::ParsingJson(e.to_string().to_owned()))
+        serde_json::from_str(&result).map_err(|e| RzPipeSpawnError::ParsingJson(e.to_string()))
     }
 
     pub fn close(&mut self) {
@@ -348,10 +368,8 @@ impl RzPipeLang {
         let buffer = self.read.read_until(0u8, &mut res);
 
         match buffer {
-            Ok(_) => {
-                return process_result(res).map_err(|e| RzPipeLangError::ProcessResult(e));
-            }
-            Err(e) => Err(RzPipeLangError::BufferNotFullyReadable(e.to_string().to_owned()))
+            Ok(_) => process_result(res).map_err(RzPipeLangError::ProcessResult),
+            Err(e) => Err(RzPipeLangError::BufferNotFullyReadable(e.to_string())),
         }
     }
 
@@ -393,7 +411,7 @@ impl RzPipeTcp {
             .read_to_end(&mut res)
             .map_err(|e| RzPipeTcpError::Read(e.to_string()))?;
         res.push(0);
-        process_result(res).map_err(|e| RzPipeTcpError::ProcessResult(e.to_string().to_owned()))
+        process_result(res).map_err(RzPipeTcpError::ProcessResult)
     }
 
     pub fn cmdj(&mut self, cmd: &str) -> Result<Value, RzPipeTcpError> {

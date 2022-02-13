@@ -18,7 +18,7 @@ fn main() {
 
     // At this point we can iter through all of our rzpipes and send some commands
     for p in pipes.iter() {
-        if let Ok(_) = p.send("ij".to_string()) {};
+        if p.send("ij".to_string()).is_ok() {};
     }
 
     // do_other_stuff_here();
@@ -34,7 +34,7 @@ fn main() {
     // Finally properly close all pipes
     // Note: For "join()" we need to borrow so pipes.iter() won't work for this
     for p in pipes {
-        if let Ok(_) = p.send("q".to_string()) {};
+        if p.send("q".to_string()).is_ok() {};
         p.handle.join().unwrap();
     }
 }

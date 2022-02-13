@@ -18,7 +18,7 @@
 //!
 //! Typically, there are two ways to invoke rzpipe. One by spawning a
 //! child-process from inside rizin and second by making the program spawn
-//! a child rzprocess. `enum RzPipe` is provided to allow easier use of the 
+//! a child rzprocess. `enum RzPipe` is provided to allow easier use of the
 //! library and abstract the difference between these two methods.
 //!
 //! The `macro open_pipe!()` determines which of the two methods to use.
@@ -45,18 +45,13 @@
 //! }
 //! ```
 //!
-//! The crate offers various methods to interact with rzpipe, eg. via 
+//! The crate offers various methods to interact with rzpipe, eg. via
 //! process (multi-threadable), http or tcp.
 //! Check the examples/ dir for more complete examples.
 
 pub use self::errors::{
-    RzInitError,
-    RzPipeError,
-    RzPipeHttpError,
-    RzPipeLangError,
-    RzPipeSpawnError,
+    RzInitError, RzPipeError, RzPipeHttpError, RzPipeLangError, RzPipeSpawnError, RzPipeTcpError,
     RzPipeThreadError,
-    RzPipeTcpError,
 };
 // Rexport to bring it out one module.
 pub use self::rz::Rz;
@@ -65,6 +60,5 @@ pub use self::rzpipe::RzPipeSpawnOptions;
 
 #[macro_use]
 pub mod rzpipe;
-pub mod rz;
 pub mod errors;
-
+pub mod rz;

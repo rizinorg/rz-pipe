@@ -109,3 +109,26 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         make
       working-directory: ruby
+
+  rust-fmt-clippy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check --manifest-path rust/Cargo.toml
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --manifest-path rust/Cargo.toml -- -D warnings

@@ -1,7 +1,7 @@
 use rzpipe::RzPipe;
 
 fn main() {
-    let mut rzp = RzPipe::spawn("/bin/ls".to_owned(), None).unwrap();
+    let mut rzp = RzPipe::spawn("/bin/ls", None).unwrap();
     println!("{}", rzp.cmd("?e Hello").unwrap());
     if let Err(_) = rzp.cmd("q") {
         // !killall rz") {
