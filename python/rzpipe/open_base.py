@@ -243,6 +243,8 @@ class OpenBase(object):
 
         res = self._cmd(cmd, **kwargs)
         if res is not None:
+            if os.name == "nt":
+                res = res.replace("\r\n", "\n")
             return res
         return None
 
