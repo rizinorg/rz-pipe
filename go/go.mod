@@ -1,4 +1,4 @@
-module github.com/rizinorg/rz-pipe
+module github.com/rizinorg/rz-pipe/go
 
 go 1.15
 
