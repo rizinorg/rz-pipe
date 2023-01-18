@@ -132,8 +132,10 @@ impl RzPipe {
     }
 
     #[cfg(windows)]
-    pub fn open() -> Result<RzPipe, &'static str> {
-        Err("`open()` is not yet supported on windows")
+    pub fn open() -> Result<RzPipe, RzPipeError> {
+        Err(RzPipeError::Other(
+            "`open()` is not yet supported on windows".to_string(),
+        ))
     }
 
     pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeError> {
