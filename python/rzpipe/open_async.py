@@ -31,8 +31,8 @@ class open(OpenBase, ContextDecorator):
         if not self._loop.is_closed():
             self._loop.close()
 
-    def __init__(self, filename="", flags=None, rz_home=None):
-        super(open, self).__init__(filename, flags)
+    def __init__(self, filename="", flags=None, rz_home=None, **kwargs):
+        super(open, self).__init__(filename, flags, **kwargs)
 
         if flags is None:
             flags = []
