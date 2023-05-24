@@ -23,8 +23,8 @@ except ImportError:
 
 
 class open(OpenBase):
-    def __init__(self, filename="", flags=None, rizin_home=None):
-        super(open, self).__init__(filename, flags)
+    def __init__(self, filename="", flags=None, rizin_home=None, **kwargs):
+        super(open, self).__init__(filename, flags, **kwargs)
         if flags is None:
             flags = []
         if filename.startswith("http://"):

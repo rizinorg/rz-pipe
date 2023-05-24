@@ -10,6 +10,9 @@ import json
 import os
 import platform
 import sys
+import signal
+import functools
+from contextlib import contextmanager
 from shutil import which
 from subprocess import Popen, PIPE
 
@@ -78,6 +81,15 @@ def get_rizin_path():
         else:
             raise IOError("rizin can't be found in your system")
 
+@contextmanager
+def timeout_callback(timeout_s, callback):
+    signal.signal(signal.SIGALRM, callback)
+
+    try:
+        signal.alarm(timeout_s)
+        yield
+    finally:
+        signal.alarm(0)
 
 class OpenBase(object):
     """
@@ -85,7 +97,7 @@ class OpenBase(object):
     Class body derived from __init__.py "open" class.
     """
 
-    def __init__(self, filename="", flags=None):
+    def __init__(self, filename="", flags=None, cmd_timeout_s=-1):
         """
         Open a new rizin pipe
         The 'filename' can be one of the following:
@@ -104,6 +116,8 @@ class OpenBase(object):
         """
         if not flags:
             flags = []
+
+        self.cmd_timeout_s = cmd_timeout_s
 
         self._async = False
 
@@ -161,6 +175,11 @@ class OpenBase(object):
     def __exit__(self, *args):
         self.quit()
 
+    def _handle_killswitch_timeout(self, context, *args):
+        self._quit_process()
+
+        raise TimeoutError(f"Timeout of {self.cmd_timeout_s} seconds reached on '{context}'")
+
     def _cmd_pipe(self, cmd):
         out = b""
         cmd = cmd.strip().replace("\n", ";")
@@ -207,6 +226,9 @@ class OpenBase(object):
     def quit(self):
         """Quit current rzpipe session and kill"""
         self.cmd("q")
+        self._quit_process()
+
+    def _quit_process(self):
         if hasattr(self, "process"):
             import subprocess
 
@@ -241,12 +263,16 @@ class OpenBase(object):
         return None
         """
 
-        res = self._cmd(cmd, **kwargs)
-        if res is not None:
-            if os.name == "nt":
-                res = res.replace("\r\n", "\n")
-            return res
-        return None
+        with timeout_callback(
+            self.cmd_timeout_s,
+            functools.partial(self._handle_killswitch_timeout, f"rzpipe.cmd: {cmd}")
+        ):
+            res = self._cmd(cmd, **kwargs)
+            if res is not None:
+                if os.name == "nt":
+                    res = res.replace("\r\n", "\n")
+                return res
+            return None
 
     def cmdj(self, cmd, **kwargs):
         """Same as cmd() but evaluates JSONs and returns an object
