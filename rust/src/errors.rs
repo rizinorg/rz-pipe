@@ -1,5 +1,6 @@
 use std::io;
 
+use reqwest;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -109,6 +110,9 @@ pub enum RzPipeHttpError {
 
     #[error("json of cmdj invocation could not be parsed: `{0}`")]
     ParsingJson(String),
+
+    #[error("http error")]
+    RequestError(#[from] reqwest::Error),
 
     #[error("root cause of the error is unknown")]
     Other,

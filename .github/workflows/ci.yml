@@ -116,9 +116,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install openssl
-        run: sudo apt-get -yq update && sudo apt-get --assume-yes install libssl-dev
-  
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
