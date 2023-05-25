@@ -10,9 +10,10 @@ import json
 import os
 import platform
 import sys
-import signal
 import functools
+import signal
 from contextlib import contextmanager
+import threading
 from shutil import which
 from subprocess import Popen, PIPE
 
@@ -81,15 +82,36 @@ def get_rizin_path():
         else:
             raise IOError("rizin can't be found in your system")
 
-@contextmanager
-def timeout_callback(timeout_s, callback):
-    signal.signal(signal.SIGALRM, callback)
 
+class TimerTimeout(Exception):
+    pass
+
+
+def raise_exception_on_thread(target_tid):
+    import ctypes
+    tid = ctypes.c_long(target_tid)
+    pyo = ctypes.py_object(TimerTimeout)
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, pyo)
+    if ret == 0:
+        raise ValueError(f"invalid thread id ({target_tid})")
+    elif ret > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+
+
+@contextmanager
+def timeout_callback(timeout_secs):
+    timer = None
+    if timeout_secs > 0:
+        tid = threading.current_thread().ident
+        timer = threading.Timer(timeout_secs, raise_exception_on_thread, args=(tid,))
     try:
-        signal.alarm(timeout_s)
+        if timer is not None:
+            timer.start()
         yield
     finally:
-        signal.alarm(0)
+        if timer is not None:
+            timer.cancel()
 
 class OpenBase(object):
     """
@@ -97,7 +119,7 @@ class OpenBase(object):
     Class body derived from __init__.py "open" class.
     """
 
-    def __init__(self, filename="", flags=None, cmd_timeout_s=-1):
+    def __init__(self, filename="", flags=None, cmd_timeout_secs=-1):
         """
         Open a new rizin pipe
         The 'filename' can be one of the following:
@@ -117,7 +139,7 @@ class OpenBase(object):
         if not flags:
             flags = []
 
-        self.cmd_timeout_s = cmd_timeout_s
+        self._cmd_timeout_secs = cmd_timeout_secs
 
         self._async = False
 
@@ -175,10 +197,8 @@ class OpenBase(object):
     def __exit__(self, *args):
         self.quit()
 
-    def _handle_killswitch_timeout(self, context, *args):
-        self._quit_process()
-
-        raise TimeoutError(f"Timeout of {self.cmd_timeout_s} seconds reached on '{context}'")
+    def set_timeout(self, timeout_secs):
+        self._cmd_timeout_secs = timeout_secs
 
     def _cmd_pipe(self, cmd):
         out = b""
@@ -237,7 +257,7 @@ class OpenBase(object):
                 for f in [self.process.stdin, self.process.stdout]:
                     if f is not None:
                         f.close()
-            self.process.terminate()
+            self.process.kill()
             self.process.wait()
             delattr(self, "process")
 
@@ -262,17 +282,17 @@ class OpenBase(object):
             return res.strip()
         return None
         """
+        with timeout_callback(self._cmd_timeout_secs):
+            try:
+                res = self._cmd(cmd, **kwargs)
+                if res is not None:
+                    if os.name == "nt":
+                        res = res.replace("\r\n", "\n")
+                    return res
+            except TimerTimeout:
+                raise TimeoutError(f"Timeout reached on cmd: '{cmd}'") from None
 
-        with timeout_callback(
-            self.cmd_timeout_s,
-            functools.partial(self._handle_killswitch_timeout, f"rzpipe.cmd: {cmd}")
-        ):
-            res = self._cmd(cmd, **kwargs)
-            if res is not None:
-                if os.name == "nt":
-                    res = res.replace("\r\n", "\n")
-                return res
-            return None
+        return None
 
     def cmdj(self, cmd, **kwargs):
         """Same as cmd() but evaluates JSONs and returns an object
