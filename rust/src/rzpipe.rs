@@ -134,7 +134,7 @@ impl RzPipe {
     #[cfg(windows)]
     pub fn open() -> Result<RzPipe, RzPipeError> {
         Err(RzPipeError::Other(
-            "`open()` is not yet supported on windows".to_string(),
+            "`open()` is not yet supported on Windows".to_string(),
         ))
     }
 
@@ -386,8 +386,8 @@ impl RzPipeLang {
 impl RzPipeHttp {
     pub fn cmd(&mut self, cmd: &str) -> Result<String, RzPipeHttpError> {
         let url = format!("http://{}/cmd/{}", self.host, cmd);
-        let res = reqwest::get(&url).unwrap();
-        let bytes = res.bytes().filter_map(|e| e.ok()).collect::<Vec<_>>();
+        let res = reqwest::blocking::get(url)?;
+        let bytes = res.bytes()?.to_vec();
         str::from_utf8(bytes.as_slice())
             .map(|s| s.to_string())
             .map_err(|err| RzPipeHttpError::DecodeError(err.to_string()))
