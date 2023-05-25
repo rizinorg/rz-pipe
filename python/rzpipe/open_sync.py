@@ -46,7 +46,7 @@ class open(OpenBase):
             if rizin_home is not None:
                 if not os.path.isdir(rizin_home):
                     raise Exception(
-                        "`rizinhome` passed is invalid, leave it None or put a valid path to rizin folder"
+                        "`rizin_home` passed is invalid, leave it None or put a valid path to rizin folder"
                     )
                 rze = os.path.join(rizin_home, "rizin")
             else:
