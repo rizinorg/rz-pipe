@@ -58,7 +58,8 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        python3 setup.py sdist bdist_wheel
+        python3 -m pip install build
+        python3 -m build
       working-directory: python
 
     - name: Publish Python package to pypi
