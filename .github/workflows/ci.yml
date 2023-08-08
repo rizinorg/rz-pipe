@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     name: Ubuntu
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - name: Install python and other dependencies
