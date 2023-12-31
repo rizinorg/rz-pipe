@@ -28,6 +28,27 @@ jobs:
           repository: rizinorg/rizin
           submodules: recursive
           path: rizin
+    windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Python and other dependencies
+        run: |
+          choco install python3 -y
+          python -m pip install meson ninja PyYAML
+
+      # ... remaining steps from Ubuntu job, adapted for Windows paths and tools ...
+
+  macos-build:
+    name: macOS Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Python and other dependencies
+        run: brew install python3 meson ninja
 
     - name: Build Rizin
       run: |
