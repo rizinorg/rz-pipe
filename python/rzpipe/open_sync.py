@@ -62,7 +62,9 @@ class open(OpenBase):
                 )
             except Exception:
                 raise Exception("ERROR: Cannot find rizin in PATH")
-            self.process.stdout.read(1)  # Reads initial \x00
+            # reads any startup banners and the initial \x00
+            while b"\x00" not in self.process.stdout.read(1024):
+                pass
             # make it non-blocking to speedup reading
             self.nonblocking = True
             fd = self.process.stdout.fileno()
