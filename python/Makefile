@@ -24,7 +24,7 @@ twine:
 
 pytest:
 	@echo "Running the pytest"
-	-PYTHONPATH=$$PWD $(PYTHON) -m pytest -p no:cacheprovider  tests/
+	PYTHONPATH=$$PWD $(PYTHON) -m pytest -p no:cacheprovider  tests/
 
 test: test2 test3
 
