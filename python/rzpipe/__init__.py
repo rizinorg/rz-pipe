@@ -32,7 +32,7 @@ try:
 except ImportError:
     rzlang = None
 
-VERSION = "0.6.1"
+VERSION = "0.6.2"
 
 from .open_sync import open
 from shutil import which
