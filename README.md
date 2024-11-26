@@ -1,35 +1,39 @@
-rz-pipe
-======
+# rz-pipe
+The `rz-pipe` provides access to `rz_core_cmd_str()`.
 
-The rz-pipe APIs are based on a single rizin primitive found behind `rz_core_cmd_str()`
-which is a function that accepts a string parameter describing the rizin command to
-run and returns a string with the result.
 
-The decision behind this design comes from a series of benchmarks with different
-libffi implementations and resulted that using the native API is more complex and
-slower than just using raw command strings and parsing the output.
+## Usage
+This function **takes a string parameter describing the rizin command** to execute and **returns a string** with the result.
 
-As long as the output can be tricky to parse, it's recommended to use the JSON
-output and deserializing them into native language objects which results much more
-handy than handling and maintaining internal data structures and pointers.
+```json
+"fij"
+```
+-> 
+```json
+[{"name":"entry0","size":1,"offset":27296},{"name":"entry.fini0","size":1,"offset":27456},{"name":"entry.init0","size":1,"offset":27520}]
+```
 
-Also, memory management results into a much simpler thing because you only have
-to care about freeing the resulting string.
 
-This directory contains different implementations of the rz-pipe API for different
-languages which could handle different communication backends:
+## Design Choice
+After benchmarking various `libffi` implementations, it was found that using the native API is both more complex and slower compared to utilizing raw command strings and parsing their output.
+Parsing the output can be challenging, so it's advisable to use JSON output and deserialize it into native language objects.
+This approach proves to be much more convenient than dealing with and maintaining internal data structures and pointers.
 
-  * Grab RZPIPE{_IN|_OUT} environment variables
-  * Spawn `rizin -q0` and communicate with pipe(2)
-  * Plain TCP connection
-  * HTTP queries (connecting to a remote webserver)
-  * RAP protocol (rizin own's remote protocol)
+Moreover, memory management becomes simpler since you only need to focus on freeing the resulting string.
 
-The current supported languages are:
+## Backends
+In this directory, you'll find different implementations of the `rz-pipe` API for various languages, each capable of handling different communication backends:
 
-  * Python
-  * Go
-  * Haskell
-  * OCaml
-  * Rust
-  * Ruby
+- Retrieving RZPIPE{_IN|_OUT} environment variables
+- Spawning `rizin -q0` and communicating with pipe(2)
+- Plain TCP connection
+- HTTP queries (connecting to a remote webserver)
+- RAP protocol (rizin's custom remote protocol)
+
+## Supported Languages
+- Python
+- Go
+- Haskell
+- OCaml
+- Rust
+- Ruby
