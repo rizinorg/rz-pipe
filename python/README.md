@@ -20,10 +20,10 @@ $ pip3 install rzpipe
 ```python
 import rzpipe
 
-pipe = rzpipe.open("/bin/ls")
+pipe = rzpipe.open('/bin/ls')
 pipe.cmd('aa')
-print(pipe.cmd("afl"))
-print(pipe.cmdj("aflj"))            # parses the JSON and returns a dict (note the lowercase j)
-print(pipe.cmdJ("ij").core.format)  # parses the JSON and returns a namedtuple (note the uppercase J)
+print(pipe.cmd('afl'))
+print(pipe.cmdj('aflj'))            # parses the JSON and returns a dict (note the lowercase j)
+print(pipe.cmdJ('ij').core.format)  # parses the JSON and returns a namedtuple (note the uppercase J)
 pipe.quit()
 ```
