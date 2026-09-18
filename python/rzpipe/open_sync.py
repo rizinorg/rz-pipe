@@ -36,8 +36,10 @@ class open(OpenBase):
         elif filename.startswith("tcp://"):
             r = re.match(r"tcp://(\d+\.\d+.\d+.\d+):(\d+)/?", filename)
             if not r:
-                raise ValueError("You must provide the tcp address in this format:\n"
-                                 "tcp://xxx.xxx.xxx.xxx:yyyy")
+                raise ValueError(
+                    "You must provide the tcp address in this format:\n"
+                    "tcp://xxx.xxx.xxx.xxx:yyyy"
+                )
             self._cmd = self._cmd_tcp
             self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.conn.connect((r.group(1), int(r.group(2))))
@@ -58,7 +60,12 @@ class open(OpenBase):
             cmd = cmd[:1] + flags + cmd[1:]
             try:
                 self.process = Popen(
-                    cmd, shell=False, stdin=PIPE, stdout=PIPE, bufsize=0
+                    cmd,
+                    shell=False,
+                    stdin=PIPE,
+                    stdout=PIPE,
+                    stderr=PIPE,
+                    bufsize=0,
                 )
             except Exception:
                 raise Exception("ERROR: Cannot find rizin in PATH")
@@ -66,10 +73,12 @@ class open(OpenBase):
             while b"\x00" not in self.process.stdout.read(1024):
                 pass
             # make it non-blocking to speedup reading
-            self.nonblocking = True
             fd = self.process.stdout.fileno()
             if not self.__make_non_blocking(fd):
                 raise Exception("ERROR: Cannot make stdout pipe non-blocking")
+            fd = self.process.stderr.fileno()
+            if not self.__make_non_blocking(fd):
+                raise Exception("ERROR: Cannot make stderr pipe non-blocking")
 
     @staticmethod
     def __make_non_blocking(fd):
@@ -101,30 +110,37 @@ class open(OpenBase):
         res = SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
         return res != 0
 
-    def _cmd_process(self, cmd):
+    def _cmd_process(self, cmd, **kwargs):
+        if not self.process.stdin:
+            raise ValueError("self.process.stdin is None")
+
         cmd = cmd.strip().replace("\n", ";")
         self.process.stdin.write((cmd + "\n").encode("utf8"))
-        r = self.process.stdout
         self.process.stdin.flush()
+
+        stdo = self.process.stdout
+        err = self.process.stderr
+        if not stdo or not err:
+            raise ValueError("self.process.stdin or stderr are None")
+
         out = b""
         while True:
-            if self.nonblocking:
-                try:
-                    foo = r.read(4096)
-                except Exception:
-                    continue
-            else:
-                foo = r.read(1)
+            try:
+                foo = stdo.read(4096)
+            except BlockingIOError:
+                pass
+            try:
+                if not foo and kwargs.get("ret_stderr"):
+                    foo = err.read(4096)
+            except BlockingIOError:
+                continue
+
             if foo:
                 if foo.endswith(b"\0"):
                     out += foo[:-1]
                     break
-
                 out += foo
-            else:
-                # if there is no any output from pipe this loop will eat CPU, probably we have to do micro-sleep here
-                if self.nonblocking:
-                    time.sleep(0.001)
+            time.sleep(0.01)
 
         return out.decode("utf-8", errors="ignore")
 
