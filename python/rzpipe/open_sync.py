@@ -114,6 +114,8 @@ class open(OpenBase):
         if not self.process.stdin:
             raise ValueError("self.process.stdin is None")
 
+        if kwargs.get("echo_cmd"):
+            print(f"\rrz exec: '{cmd}'")
         cmd = cmd.strip().replace("\n", ";")
         self.process.stdin.write((cmd + "\n").encode("utf8"))
         self.process.stdin.flush()
