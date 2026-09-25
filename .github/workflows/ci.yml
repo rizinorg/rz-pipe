@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install python and other dependencies
-      run: sudo apt-get update && sudo apt-get --assume-yes install python3-wheel python3-setuptools ruby ocaml opam rustc cargo
+      run: sudo apt-get update && sudo apt-get --assume-yes install python3-wheel python3-setuptools ruby ocaml opam rustc cargo racket
     - name: Install meson and ninja
       run: pip3 install --user meson ninja PyYAML
     - name: Checkout rizin
@@ -111,6 +111,14 @@ jobs:
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         make
       working-directory: ruby
+
+    - name: Run Racket rz-pipe test
+      run: |
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        raco test main.rkt
+      working-directory: racket
 
   rust-fmt-clippy:
     runs-on: ubuntu-latest

@@ -2,3 +2,4 @@ __pycache__
 .idea
 rzpipe.egg-info
 target/
+.DS_Store
