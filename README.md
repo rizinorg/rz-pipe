@@ -33,3 +33,4 @@ The current supported languages are:
   * OCaml
   * Rust
   * Ruby
+  * Racket
