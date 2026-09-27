@@ -268,19 +268,19 @@ class OpenBase(object):
 
     # rizin commands
     def cmd(self, cmd, **kwargs):
-        """Run an rizin command return string with result
+        """Run a rizin command and return string with result.
+
+        Note: Commands relying on function graph or basic block analysis
+        (such as `pdb`, `pdf`, `afl`) require running function analysis
+        (e.g., `cmd('aa')`) beforehand to produce full block disassembly.
+
         Args:
             cmd (str): rizin command
             kwargs:
                 Only for open_async:
                 callback (typing.Callable): callback which is to be invoked after cmd has finished
         Returns:
-            Returns an string with the results of the command
-
-        res = self._cmd(cmd)
-        if res is not None:
-            return res.strip()
-        return None
+            Returns a string with the results of the command
         """
         with timeout_callback(self._cmd_timeout_secs):
             try:
