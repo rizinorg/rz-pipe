@@ -127,6 +127,7 @@ class open(OpenBase):
 
         out = b""
         while True:
+            foo = None
             try:
                 foo = stdo.read(4096)
             except BlockingIOError:
@@ -135,11 +136,12 @@ class open(OpenBase):
                 if not foo and kwargs.get("ret_stderr"):
                     foo = err.read(4096)
             except BlockingIOError:
-                continue
+                pass
 
             if foo:
-                if foo.endswith(b"\0"):
-                    out += foo[:-1]
+                if b"\0" in foo:
+                    idx = foo.find(b"\0")
+                    out += foo[:idx]
                     break
                 out += foo
             time.sleep(0.01)
