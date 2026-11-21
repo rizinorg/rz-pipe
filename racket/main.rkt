@@ -12,6 +12,7 @@
   cmd
   cmdj
   (struct-out exn:fail:rz-pipe:rizin-not-found)
+  (struct-out exn:fail:rz-pipe:startup)
   (struct-out exn:fail:rz-pipe:unexpected-data))
 
 (struct rizin
@@ -21,6 +22,7 @@
   #:type-name Rizin)
 
 (struct exn:fail:rz-pipe:rizin-not-found exn:fail ())
+(struct exn:fail:rz-pipe:startup exn:fail ())
 (struct exn:fail:rz-pipe:unexpected-data exn:fail ())
 
 (define (open [filename : (U Bytes Path-String)] #:stderr [err-mode : (U 'forward 'ignore) 'forward]) : Rizin
@@ -39,8 +41,15 @@
     (λ ()
       (copy-port err err-dst)
       (close-input-port err)))
-  (unless (equal? (read-byte out) 0) ; read initial \0
-    (raise (exn:fail:rz-pipe:unexpected-data "open: rizin did not write initial 0-byte" (current-continuation-marks))))
+  (let ([init-byte (read-byte out)]) ; read initial \0
+       (unless (equal? init-byte 0)
+         (if (eof-object? init-byte)
+             (raise (exn:fail:rz-pipe:startup
+                      "open: rizin failed to start or the given file could not be opened"
+                      (current-continuation-marks)))
+             (raise (exn:fail:rz-pipe:unexpected-data
+                      (format "open: rizin did not write initial 0-byte, but instead ~v" init-byte)
+                      (current-continuation-marks))))))
   (rizin sp out in))
 
 (define (close [rz : Rizin])
@@ -62,9 +71,11 @@
 
 (module+ test
   (require typed/rackunit)
-  (define rz (open "malloc://1024"))
-  (void (cmd rz "w \"Hello World\""))
-  (check-equal? (cmd rz "ps") "Hello World\n")
-  (define j (cmdj rz "psj"))
-  (check-equal? (hash-ref (assert j hash?) 'string) "Hello World")
-  (close rz))
+  (let ([rz (open "malloc://1024")])
+    (void (cmd rz "w \"Hello World\""))
+    (test-equal? "cmd" (cmd rz "ps") "Hello World\n")
+    (define j (cmdj rz "psj"))
+    (test-equal? "cmdj" (hash-ref (assert j hash?) 'string) "Hello World")
+    (close rz))
+  (test-exn "non-existent file" exn:fail:rz-pipe:startup?
+    (λ () (open "/this/file/does/not/exist" #:stderr 'ignore))))
