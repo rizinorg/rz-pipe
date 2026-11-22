@@ -117,7 +117,8 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        raco test main.rkt
+        raco pkg install --auto --batch ./rz-pipe ./rz-pipe-lib
+        raco test -x -p rz-pipe-lib
       working-directory: racket
 
   rust-fmt-clippy:

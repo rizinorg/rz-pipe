@@ -5,13 +5,14 @@ type checking, and in untyped Racket with contracts evaluated at runtime.
 
 ## Installation
 
-In this directory, to install the package user-wide:
+In this directory, to install both library and documentation user-wide:
 
 ```
-raco pkg install
+raco pkg install ./rz-pipe-lib ./rz-pipe
 ```
 
-### Usage examples
+
+## Usage examples
 
 Scripting:
 
