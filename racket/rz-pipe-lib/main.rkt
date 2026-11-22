@@ -97,20 +97,23 @@
 (module+ test
   (require typed/rackunit
            typed/racket/system)
-  (let ([rz (open "malloc://1024")])
-    (void (cmd rz "w \"Hello World\""))
-    (test-equal? "cmd" (cmd rz "ps") "Hello World\n")
-    (define j (cmdj rz "psj"))
-    (test-equal? "cmdj" (hash-ref (assert j hash?) 'string) "Hello World")
-    (close rz))
-  (test-exn "non-existent file" exn:fail:rz-pipe:startup?
-    (λ () (open "/this/file/does/not/exist" #:stderr 'ignore)))
-  (test-equal?
-    "embedded rz-pipe"
-    (with-output-to-string (λ ()
-      (system*
-        (assert (find-executable-path "rizin"))
-        "-qc"
-        "#!pipe racket -e \\'(require \"./main.rkt\") (cmdj (open) \"pxj 1\")\\'"
-        "hex://2a")))
-    "'(42)\n"))
+  (if (getenv "PLT_PKG_BUILD_SERVICE")
+    (displayln "Skipping tests because the Racket build service has no rizin available.")
+    (begin
+      (let ([rz (open "malloc://1024")])
+        (void (cmd rz "w \"Hello World\""))
+        (test-equal? "cmd" (cmd rz "ps") "Hello World\n")
+        (define j (cmdj rz "psj"))
+        (test-equal? "cmdj" (hash-ref (assert j hash?) 'string) "Hello World")
+        (close rz))
+      (test-exn "non-existent file" exn:fail:rz-pipe:startup?
+        (λ () (open "/this/file/does/not/exist" #:stderr 'ignore)))
+      (test-equal?
+        "embedded rz-pipe"
+        (with-output-to-string (λ ()
+          (system*
+            (assert (find-executable-path "rizin"))
+            "-qc"
+            "#!pipe racket -e \\'(require \"./main.rkt\") (cmdj (open) \"pxj 1\")\\'"
+            "hex://2a")))
+        "'(42)\n"))))
