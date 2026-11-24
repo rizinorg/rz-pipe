@@ -9,7 +9,7 @@ import re
 import socket
 import time
 import os
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 from urllib.request import urlopen
 from urllib.error import URLError
 from urllib.parse import quote
@@ -69,16 +69,80 @@ class open(OpenBase):
                 )
             except Exception:
                 raise Exception("ERROR: Cannot find rizin in PATH")
-            # reads any startup banners and the initial \x00
-            while b"\x00" not in self.process.stdout.read(1024):
-                pass
-            # make it non-blocking to speedup reading
-            fd = self.process.stdout.fileno()
-            if not self.__make_non_blocking(fd):
-                raise Exception("ERROR: Cannot make stdout pipe non-blocking")
-            fd = self.process.stderr.fileno()
-            if not self.__make_non_blocking(fd):
-                raise Exception("ERROR: Cannot make stderr pipe non-blocking")
+            try:
+                # reads any startup banners and the initial \x00
+                while True:
+                    chunk = self.process.stdout.read(1024)
+                    if not chunk:
+                        rc, stderr_data = self._cleanup_startup_process()
+                        raise BrokenPipeError(
+                            self._format_eof_error(
+                                "ERROR: rizin exited before initializing pipe",
+                                rc,
+                                stderr_data,
+                            )
+                        )
+                    if b"\x00" in chunk:
+                        break
+                # make it non-blocking to speedup reading
+                fd = self.process.stdout.fileno()
+                if not self.__make_non_blocking(fd):
+                    raise Exception("ERROR: Cannot make stdout pipe non-blocking")
+                fd = self.process.stderr.fileno()
+                if not self.__make_non_blocking(fd):
+                    raise Exception("ERROR: Cannot make stderr pipe non-blocking")
+            except BaseException:
+                self._quit_process()
+                raise
+
+    @staticmethod
+    def _format_eof_error(prefix, rc, stderr_bytes):
+        msg = prefix
+        if isinstance(rc, int):
+            msg = f"{msg} (exit code {rc})"
+        if isinstance(stderr_bytes, bytes) and stderr_bytes:
+            if len(stderr_bytes) > 4096:
+                stderr_bytes = stderr_bytes[-4096:]
+            err_msg = stderr_bytes.decode("utf-8", errors="ignore").strip()
+            if err_msg:
+                msg = f"{msg}: {err_msg}"
+        return msg
+
+    def _cleanup_startup_process(self):
+        proc = getattr(self, "process", None)
+        if proc is None:
+            return None, b""
+        stderr_data = b""
+        try:
+            _, stderr_data = proc.communicate(timeout=5)
+        except TimeoutExpired as exc:
+            stderr_data = exc.stderr or b""
+            if proc.poll() is None:
+                proc.kill()
+            try:
+                _, drained_stderr = proc.communicate(timeout=1)
+            except TimeoutExpired as exc2:
+                if exc2.stderr:
+                    stderr_data = exc2.stderr
+                proc.wait()
+            else:
+                if drained_stderr:
+                    stderr_data = drained_stderr
+        except BaseException:
+            if proc.poll() is None:
+                proc.kill()
+            proc.wait()
+            raise
+        finally:
+            for f in (proc.stdin, proc.stdout, proc.stderr):
+                if f is not None and not f.closed:
+                    try:
+                        f.close()
+                    except OSError:
+                        pass
+            if hasattr(self, "process"):
+                delattr(self, "process")
+        return proc.returncode, stderr_data or b""
 
     @staticmethod
     def __make_non_blocking(fd):
@@ -111,6 +175,8 @@ class open(OpenBase):
         return res != 0
 
     def _cmd_process(self, cmd, **kwargs):
+        if not hasattr(self, "process") or self.process is None:
+            raise BrokenPipeError("ERROR: rizin process is not running")
         if not self.process.stdin:
             raise ValueError("self.process.stdin is None")
 
@@ -132,6 +198,29 @@ class open(OpenBase):
                 foo = stdo.read(4096)
             except BlockingIOError:
                 pass
+            if foo == b"":
+                err_buf = b""
+                while len(err_buf) < 65536:
+                    try:
+                        err_chunk = err.read(4096)
+                    except OSError:
+                        break
+                    if not err_chunk or not isinstance(err_chunk, bytes):
+                        break
+                    err_buf += err_chunk
+                rc = self.process.poll()
+                if rc is None:
+                    try:
+                        rc = self.process.wait(timeout=0.05)
+                    except (TimeoutExpired, OSError, TypeError):
+                        pass
+                raise BrokenPipeError(
+                    self._format_eof_error(
+                        "ERROR: rizin process closed stdout unexpectedly",
+                        rc,
+                        err_buf,
+                    )
+                )
             try:
                 if not foo and kwargs.get("ret_stderr"):
                     foo = err.read(4096)
