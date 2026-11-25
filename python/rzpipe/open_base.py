@@ -245,8 +245,12 @@ class OpenBase(object):
 
     def quit(self):
         """Quit current rzpipe session and kill"""
-        self.cmd("q")
-        self._quit_process()
+        try:
+            self.cmd("q")
+        except OSError:
+            pass
+        finally:
+            self._quit_process()
 
     def _quit_process(self):
         if hasattr(self, "process"):
@@ -254,9 +258,16 @@ class OpenBase(object):
 
             is_async = not isinstance(self.process, subprocess.Popen)
             if not is_async:
-                for f in [self.process.stdin, self.process.stdout]:
+                for f in [
+                    self.process.stdin,
+                    self.process.stdout,
+                    self.process.stderr,
+                ]:
                     if f is not None:
-                        f.close()
+                        try:
+                            f.close()
+                        except OSError:
+                            pass
             self.process.kill()
             self.process.wait()
             delattr(self, "process")
