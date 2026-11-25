@@ -1,6 +1,7 @@
 from shutil import which
 import subprocess
 import sys
+import time
 from unittest.mock import MagicMock, patch
 import pytest
 from rzpipe import open_sync
@@ -375,3 +376,121 @@ def test_real_rizin_startup_eof_and_mid_session_exit():
     with open_sync.open("--") as rz:
         with pytest.raises(BrokenPipeError):
             rz.cmd("q!!")
+
+
+def test_cmd_process_large_multichunk_no_sleep_throttle():
+    """
+    Reading 128 chunks (512 KiB) must not sleep 10 ms between ready chunks.
+    Previously 128 * 0.01 s = >= 1.28 s; now completes in a few milliseconds.
+    """
+    instance = create_mock_open_instance()
+    payload_chunk = b"A" * 4096
+    instance.process.stdout = MockPipe([payload_chunk] * 128 + [b"\x00"])
+    instance.process.stderr = MockPipe([])
+
+    t0 = time.perf_counter()
+    result = instance._cmd_process("aflj")
+    elapsed = time.perf_counter() - t0
+
+    assert len(result) == 128 * 4096
+    assert elapsed < 0.5
+
+
+def test_cmd_process_select_fast_small_commands_and_ret_stderr():
+    """
+    Real subprocess pipe: 50 round-trip commands must wake immediately via poll/select
+    (well below the legacy 50 * 10 ms = 500 ms sleep floor), and ret_stderr=True must
+    capture stderr emitted alongside the stdout terminator without spinning on stderr EOF.
+    """
+    script = (
+        "import sys\n"
+        "sys.stdout.buffer.write(b'\\x00')\n"
+        "sys.stdout.buffer.flush()\n"
+        "for line in sys.stdin.buffer:\n"
+        "    cmd = line.strip()\n"
+        "    if cmd == b'q':\n"
+        "        sys.stdout.buffer.write(b'\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "        break\n"
+        "    if cmd == b'err':\n"
+        "        sys.stderr.buffer.write(b'ERROR: bad\\n')\n"
+        "        sys.stderr.buffer.flush()\n"
+        "        sys.stdout.buffer.write(b'\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "    elif cmd == b'big':\n"
+        "        sys.stdout.buffer.write(b'X' * 524288 + b'\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "    else:\n"
+        "        sys.stdout.buffer.write(b'ok\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+    )
+    real_popen = subprocess.Popen
+
+    def fake_popen(cmd, **kwargs):
+        return real_popen([sys.executable, "-c", script], **kwargs)
+
+    with patch.object(open_sync, "Popen", side_effect=fake_popen):
+        with open_sync.open("dummy") as rz:
+            t0 = time.perf_counter()
+            for _ in range(50):
+                assert rz.cmd("ping") == "ok"
+            small_elapsed = time.perf_counter() - t0
+            if sys.platform != "win32":
+                assert small_elapsed < 0.35
+
+            t0 = time.perf_counter()
+            big = rz.cmd("big")
+            big_elapsed = time.perf_counter() - t0
+            assert len(big) == 524288
+            assert big_elapsed < 0.5
+
+            err_out = rz.cmd("err", ret_stderr=True)
+            assert "ERROR: bad" in err_out
+
+
+def test_cmd_process_ret_stderr_drain_on_nul_and_embedded_nul():
+    """
+    ret_stderr=True must capture stderr emitted alongside stdout '\\x00' and must not
+    desynchronize subsequent commands if stderr contains an embedded NUL byte.
+    """
+    instance = create_mock_open_instance()
+    instance.process.stdout = MockPipe([b"out\n\x00"])
+    instance.process.stderr = MockPipe([b"WARN: detail\n"])
+    assert instance._cmd_process("cmd", ret_stderr=True) == "out\nWARN: detail\n"
+
+    script = (
+        "import os, sys\n"
+        "sys.stdout.buffer.write(b'\\x00')\n"
+        "sys.stdout.buffer.flush()\n"
+        "for line in sys.stdin.buffer:\n"
+        "    cmd = line.strip()\n"
+        "    if cmd == b'q':\n"
+        "        sys.stdout.buffer.write(b'\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "        break\n"
+        "    if cmd == b'nul_err':\n"
+        "        sys.stderr.buffer.write(b'WARN\\x00TAIL\\n')\n"
+        "        sys.stderr.buffer.flush()\n"
+        "        sys.stdout.buffer.write(b'primary\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "    elif cmd == b'close_err':\n"
+        "        os.close(2)\n"
+        "        sys.stdout.buffer.write(b'after_close\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+        "    else:\n"
+        "        sys.stdout.buffer.write(b'synced\\x00')\n"
+        "        sys.stdout.buffer.flush()\n"
+    )
+    real_popen = subprocess.Popen
+
+    def fake_popen(cmd, **kwargs):
+        return real_popen([sys.executable, "-c", script], **kwargs)
+
+    with patch.object(open_sync, "Popen", side_effect=fake_popen):
+        with open_sync.open("dummy") as rz:
+            out = rz.cmd("nul_err", ret_stderr=True)
+            assert "primary" in out
+            assert "WARN" in out
+            assert rz.cmd("ping") == "synced"
+            assert rz.cmd("close_err", ret_stderr=True) == "after_close"
+            assert rz.cmd("ping", ret_stderr=True) == "synced"

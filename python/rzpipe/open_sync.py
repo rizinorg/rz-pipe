@@ -6,6 +6,7 @@ This script use code from old __init__.py open object
 """
 
 import re
+import select
 import socket
 import time
 import os
@@ -174,6 +175,58 @@ class open(OpenBase):
         res = SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
         return res != 0
 
+    @staticmethod
+    def _get_selectable_fd(stream):
+        if os.name == "nt" or stream is None:
+            return None
+        try:
+            fd = stream.fileno()
+        except (AttributeError, OSError, ValueError):
+            return None
+        if isinstance(fd, int) and fd >= 0:
+            return fd
+        return None
+
+    @staticmethod
+    def _drain_ret_stderr(err, chunks, read_size):
+        drained = 0
+        while drained < 1048576:
+            try:
+                err_chunk = err.read(read_size)
+            except BlockingIOError:
+                break
+            if not err_chunk or not isinstance(err_chunk, bytes):
+                break
+            chunks.append(err_chunk)
+            drained += len(err_chunk)
+
+    def _raise_cmd_eof(self, err):
+        err_chunks = []
+        err_len = 0
+        if err is not None:
+            while err_len < 65536:
+                try:
+                    err_chunk = err.read(4096)
+                except OSError:
+                    break
+                if not err_chunk or not isinstance(err_chunk, bytes):
+                    break
+                err_chunks.append(err_chunk)
+                err_len += len(err_chunk)
+        rc = self.process.poll()
+        if rc is None:
+            try:
+                rc = self.process.wait(timeout=0.05)
+            except (TimeoutExpired, OSError, TypeError):
+                pass
+        raise BrokenPipeError(
+            self._format_eof_error(
+                "ERROR: rizin process closed stdout unexpectedly",
+                rc,
+                b"".join(err_chunks),
+            )
+        )
+
     def _cmd_process(self, cmd, **kwargs):
         if not hasattr(self, "process") or self.process is None:
             raise BrokenPipeError("ERROR: rizin process is not running")
@@ -191,51 +244,75 @@ class open(OpenBase):
         if not stdo or not err:
             raise ValueError("self.process.stdin or stderr are None")
 
-        out = b""
+        read_size = 65536
+        ret_stderr = bool(kwargs.get("ret_stderr"))
+        stdo_fd = self._get_selectable_fd(stdo)
+        err_fd = self._get_selectable_fd(err) if ret_stderr else None
+        err_eof = False
+        poller = None
+        if stdo_fd is not None and hasattr(select, "poll"):
+            poller = select.poll()
+            poller.register(stdo_fd, select.POLLIN)
+            if err_fd is not None:
+                poller.register(err_fd, select.POLLIN)
+
+        chunks = []
         while True:
+            got_data = False
             foo = None
             try:
-                foo = stdo.read(4096)
+                foo = stdo.read(read_size)
             except BlockingIOError:
                 pass
             if foo == b"":
-                err_buf = b""
-                while len(err_buf) < 65536:
-                    try:
-                        err_chunk = err.read(4096)
-                    except OSError:
-                        break
-                    if not err_chunk or not isinstance(err_chunk, bytes):
-                        break
-                    err_buf += err_chunk
-                rc = self.process.poll()
-                if rc is None:
-                    try:
-                        rc = self.process.wait(timeout=0.05)
-                    except (TimeoutExpired, OSError, TypeError):
-                        pass
-                raise BrokenPipeError(
-                    self._format_eof_error(
-                        "ERROR: rizin process closed stdout unexpectedly",
-                        rc,
-                        err_buf,
-                    )
-                )
-            try:
-                if not foo and kwargs.get("ret_stderr"):
-                    foo = err.read(4096)
-            except BlockingIOError:
-                pass
-
+                self._raise_cmd_eof(err)
             if foo:
-                if b"\0" in foo:
-                    idx = foo.find(b"\0")
-                    out += foo[:idx]
+                got_data = True
+                idx = foo.find(b"\0")
+                if idx != -1:
+                    chunks.append(foo[:idx])
+                    if ret_stderr and not err_eof:
+                        self._drain_ret_stderr(err, chunks, read_size)
                     break
-                out += foo
-            time.sleep(0.01)
+                chunks.append(foo)
 
-        return out.decode("utf-8", errors="ignore")
+            if ret_stderr and not err_eof:
+                err_chunk = None
+                try:
+                    err_chunk = err.read(read_size)
+                except BlockingIOError:
+                    pass
+                if err_chunk == b"":
+                    err_eof = True
+                    if poller is not None and err_fd is not None:
+                        try:
+                            poller.unregister(err_fd)
+                        except KeyError:
+                            pass
+                elif err_chunk and isinstance(err_chunk, bytes):
+                    got_data = True
+                    chunks.append(err_chunk)
+
+            if got_data:
+                continue
+
+            if poller is not None:
+                try:
+                    poller.poll(100)
+                except InterruptedError:
+                    pass
+            elif stdo_fd is not None:
+                rlist = [stdo_fd]
+                if err_fd is not None and not err_eof:
+                    rlist.append(err_fd)
+                try:
+                    select.select(rlist, [], [], 0.1)
+                except (InterruptedError, ValueError):
+                    time.sleep(0.01)
+            else:
+                time.sleep(0.01)
+
+        return b"".join(chunks).decode("utf-8", errors="ignore")
 
     def _cmd_http(self, cmd):
         try:
